@@ -21,6 +21,12 @@ jobs:
         with:
           node-version: "20"
 
+      - name: Log schedule timing
+        run: |
+          echo "event_name=${{ github.event_name }}"
+          echo "run_started_at=${{ github.run_started_at }}"   # زمان شروع به‌نظر GitHub
+          date -u "+now_utc=%Y-%m-%dT%H:%M:%SZ"                # زمان لحظه‌ای Runner
+
       - name: Sanity - required secrets
         run: |
           test -n "${{ secrets.POSTGREST_URL }}" || (echo "POSTGREST_URL secret missing" && exit 1)
@@ -100,6 +106,8 @@ jobs:
           })().catch(e => { console.error(e); process.exit(1); });
           NODE
 
+      
+
       - name: Fetch AQ (WAQI Lingotto @9360) → upsert api.air_quality_current
         env:
           POSTGREST_URL: ${{ secrets.POSTGREST_URL }}
@@ -115,24 +123,49 @@ jobs:
             apikey: SERVICE_KEY,
             Authorization: `Bearer ${SERVICE_KEY}`,
             "Content-Type": "application/json",
-            Prefer: "resolution=merge-duplicates",
+            Prefer: "resolution=merge-duplicates,return=representation",
             "Content-Profile": "api"
           };
 
+          const LAT = 45.0705, LON = 7.6868;
+          const primary = `https://api.waqi.info/feed/@9360/?token=${TOKEN}`;
+          const fallback= `https://api.waqi.info/feed/geo:${LAT};${LON}/?token=${TOKEN}`;
+
+          const num = x => {
+            const n = Number(x);
+            return Number.isFinite(n) ? n : null;
+          };
+          const toMS = kph => kph==null ? null : Number(kph)/3.6;
+
           (async () => {
-            const url = `https://api.waqi.info/feed/@9360/?token=${TOKEN}`;
-            const r = await fetch(url);
-            if (!r.ok) { console.error('WAQI failed', r.status, await r.text()); process.exit(1); }
-            const j = await r.json();
-            if (j.status !== 'ok') { console.error('WAQI payload status!=ok', j); process.exit(1); }
+            async function fetchFeed(url, label) {
+              const r = await fetch(url, { headers: { "Cache-Control": "no-cache" } });
+              if (!r.ok) throw new Error(`${label} failed ${r.status} ${await r.text()}`);
+              const j = await r.json();
+              if (j.status !== 'ok') throw new Error(`${label} status!=ok ${JSON.stringify(j)}`);
+              return j;
+            }
 
-            const d = j.data || {};
+            // 1) primary: @9360
+            let j = await fetchFeed(primary, 'WAQI @9360');
+            let d = j.data || {};
+            let apiTs = d.time?.iso ? new Date(d.time.iso) : null;
+            const lagMin = apiTs ? Math.round((Date.now() - apiTs.getTime())/60000) : null;
+            console.log('WAQI @9360 → station:', d.city?.name, 'idx:', d.idx, 'iso:', d.time?.iso, 'lag_min:', lagMin);
+
+            // اگر داده خیلی قدیمی بود، 2) fallback: نزدیک‌ترین ایستگاه با geo
+            const MAX_LAG_MIN = 120;
+            if (!apiTs || lagMin > MAX_LAG_MIN) {
+              console.warn('Stale/old WAQI @9360 → trying geo fallback…');
+              j = await fetchFeed(fallback, 'WAQI geo');
+              d = j.data || {};
+              apiTs = d.time?.iso ? new Date(d.time.iso) : null;
+              console.log('WAQI geo → station:', d.city?.name, 'idx:', d.idx, 'iso:', d.time?.iso);
+            }
+
             const iaqi = d.iaqi || {};
-            const toMS = kph => kph==null ? null : Number(kph)/3.6;
-            const num  = x   => { const n = Number(x); return Number.isFinite(n) ? n : null; };
-
             const row = {
-              station_id: "9360",
+              station_id: String(d.idx ?? '9360'),
               station_name: d.city?.name || "Lingotto, Torino",
               city: "Turin",
               ts: d.time?.iso ? new Date(d.time.iso).toISOString() : new Date().toISOString(),
@@ -156,14 +189,21 @@ jobs:
               wind_gust_ms:  toMS(num(iaqi.wg?.v)),
             };
 
-            const res = await fetch(`${POSTGREST_URL}/air_quality_current`, {
+            const res = await fetch(`${POSTGREST_URL}/air_quality_current?on_conflict=station_id,ts`, {
               method: 'POST', headers, body: JSON.stringify([row])
             });
-            const body = await res.text();
-            console.log('air_quality_current:', res.status, 'payload_len: 1', 'resp:', body || '<no-body>');
-            if (!res.ok) process.exit(1);
+            const body = res.ok ? await res.json() : await res.text();
+            console.log('air_quality_current upsert status:', res.status, 'rows_written:', Array.isArray(body)? body.length: 0);
+            if (!res.ok) { console.error('resp:', body); process.exit(1); }
           })().catch(e => { console.error(e); process.exit(1); });
           NODE
+
+
+
+
+
+
+
 
 
 
