@@ -1,0 +1,9 @@
+# General
+.DS_Store
+*.log
+
+# Node / Pages
+node_modules/
+
+dist/
+.cache/

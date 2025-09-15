@@ -1,0 +1,283 @@
+name: ETL - Current Weather + Air Quality + Traffic Flow (TOP)
+
+on:
+  schedule:
+    - cron: "7 * * * *"   # هر 1 ساعت (UTC) - دقیقه 07 برای دوری از ترافیک
+  workflow_dispatch: {}    # اجرای دستی
+
+jobs:
+  etl_now:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    concurrency:
+      group: etl-now
+      cancel-in-progress: true
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Use Node.js 20
+        uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+
+      - name: Sanity - required secrets
+        run: |
+          test -n "${{ secrets.POSTGREST_URL }}" || (echo "POSTGREST_URL secret missing" && exit 1)
+          test -n "${{ secrets.SERVICE_KEY }}"   || (echo "SERVICE_KEY secret missing" && exit 1)
+          test -n "${{ secrets.WAQI_TOKEN }}"    || (echo "WAQI_TOKEN secret missing" && exit 1)
+
+      - name: Fetch current weather (Open-Meteo) → upsert api.weather_current
+        env:
+          POSTGREST_URL: ${{ secrets.POSTGREST_URL }}
+          SERVICE_KEY:   ${{ secrets.SERVICE_KEY }}
+          CITY:          Turin
+          CITY_LAT:      "45.0705"
+          CITY_LON:      "7.6868"
+        run: |
+          node - <<'NODE'
+          // Node 20 → global fetch
+          const env = {
+            POSTGREST_URL: process.env.POSTGREST_URL,
+            SERVICE_KEY: process.env.SERVICE_KEY,
+            CITY: process.env.CITY || 'Turin',
+            LAT: parseFloat(process.env.CITY_LAT || '45.0705'),
+            LON: parseFloat(process.env.CITY_LON || '7.6868'),
+          };
+
+          const openMeteoURL =
+            `https://api.open-meteo.com/v1/forecast?latitude=${env.LAT}&longitude=${env.LON}` +
+            `&current=temperature_2m,relative_humidity_2m,apparent_temperature,is_day,` +
+            `wind_speed_10m,wind_direction_10m,precipitation,rain,showers,snowfall,weather_code,cloud_cover` +
+            `&forecast_days=1&timezone=UTC`;
+
+          const headers = {
+            apikey: env.SERVICE_KEY,
+            Authorization: `Bearer ${env.SERVICE_KEY}`,
+            "Content-Type": "application/json",
+            Prefer: "resolution=merge-duplicates",
+            "Content-Profile": "api" // نوشتن در اسکیما api
+          };
+
+          (async () => {
+            const r = await fetch(openMeteoURL);
+            if (!r.ok) { console.error('Open-Meteo failed', r.status, await r.text()); process.exit(1); }
+            const j = await r.json();
+            const c = j.current || {};
+
+            const toMS = kph => kph==null ? null : Number(kph)/3.6;
+            const num  = x   => { const n = Number(x); return Number.isFinite(n) ? n : null; };
+
+            const row = {
+              city: env.CITY,
+              ts: new Date().toISOString(),
+              lat: env.LAT,
+              lon: env.LON,
+
+              temperature_c:        num(c.temperature_2m),
+              relative_humidity:    num(c.relative_humidity_2m),
+              apparent_temperature: num(c.apparent_temperature),
+              is_day:               c.is_day === 1 || c.is_day === true,
+
+              wind_speed_ms:        toMS(num(c.wind_speed_10m)),
+              wind_dir_deg:         num(c.wind_direction_10m),
+
+              precipitation_mm:     num(c.precipitation),
+              rain_mm:              num(c.rain),
+              showers_mm:           num(c.showers),
+              snowfall_mm:          num(c.snowfall),
+
+              weather_code:         c.weather_code != null ? Number(c.weather_code) : null,
+              cloud_cover:          num(c.cloud_cover),
+            };
+
+            const res = await fetch(`${env.POSTGREST_URL}/weather_current`, {
+              method: 'POST', headers, body: JSON.stringify([row])
+            });
+            const body = await res.text();
+            console.log('weather_current:', res.status, 'payload_len: 1', 'resp:', body || '<no-body>');
+            if (!res.ok) process.exit(1);
+          })().catch(e => { console.error(e); process.exit(1); });
+          NODE
+
+      - name: Fetch AQ (WAQI Lingotto @9360) → upsert api.air_quality_current
+        env:
+          POSTGREST_URL: ${{ secrets.POSTGREST_URL }}
+          SERVICE_KEY:   ${{ secrets.SERVICE_KEY }}
+          WAQI_TOKEN:    ${{ secrets.WAQI_TOKEN }}
+        run: |
+          node - <<'NODE'
+          const POSTGREST_URL = process.env.POSTGREST_URL;
+          const SERVICE_KEY   = process.env.SERVICE_KEY;
+          const TOKEN         = process.env.WAQI_TOKEN;
+
+          const headers = {
+            apikey: SERVICE_KEY,
+            Authorization: `Bearer ${SERVICE_KEY}`,
+            "Content-Type": "application/json",
+            Prefer: "resolution=merge-duplicates",
+            "Content-Profile": "api"
+          };
+
+          (async () => {
+            const url = `https://api.waqi.info/feed/@9360/?token=${TOKEN}`;
+            const r = await fetch(url);
+            if (!r.ok) { console.error('WAQI failed', r.status, await r.text()); process.exit(1); }
+            const j = await r.json();
+            if (j.status !== 'ok') { console.error('WAQI payload status!=ok', j); process.exit(1); }
+
+            const d = j.data || {};
+            const iaqi = d.iaqi || {};
+            const toMS = kph => kph==null ? null : Number(kph)/3.6;
+            const num  = x   => { const n = Number(x); return Number.isFinite(n) ? n : null; };
+
+            const row = {
+              station_id: "9360",
+              station_name: d.city?.name || "Lingotto, Torino",
+              city: "Turin",
+              ts: d.time?.iso ? new Date(d.time.iso).toISOString() : new Date().toISOString(),
+              lat: d.city?.geo?.[0],
+              lon: d.city?.geo?.[1],
+
+              aqi: d.aqi != null ? Number(d.aqi) : null,
+              dominent_pol: d.dominentpol || null,
+
+              co:   num(iaqi.co?.v),
+              no2:  num(iaqi.no2?.v),
+              o3:   num(iaqi.o3?.v),
+              so2:  num(iaqi.so2?.v),
+              pm10: num(iaqi.pm10?.v),
+              pm25: num(iaqi.pm25?.v),
+
+              temp_c:        num(iaqi.t?.v),
+              humidity:      num(iaqi.h?.v),
+              pressure_hpa:  num(iaqi.p?.v),
+              wind_speed_ms: toMS(num(iaqi.w?.v)),
+              wind_gust_ms:  toMS(num(iaqi.wg?.v)),
+            };
+
+            const res = await fetch(`${POSTGREST_URL}/air_quality_current`, {
+              method: 'POST', headers, body: JSON.stringify([row])
+            });
+            const body = await res.text();
+            console.log('air_quality_current:', res.status, 'payload_len: 1', 'resp:', body || '<no-body>');
+            if (!res.ok) process.exit(1);
+          })().catch(e => { console.error(e); process.exit(1); });
+          NODE
+
+
+
+      - name: Fetch Torino traffic (5T XML) → upsert api.traffic_flow_current
+        env:
+          POSTGREST_URL: ${{ secrets.POSTGREST_URL }}
+          SERVICE_KEY:   ${{ secrets.SERVICE_KEY }}
+          # اگر URL عمومی داری:
+          TRAFFIC_URL:   https://opendata.5t.torino.it/get_fdt
+          # اگر URL اختصاصی/امضادار داری، به‌جای خط بالا:
+          # TRAFFIC_URL:   ${{ secrets.TRAFFIC_URL }}
+        run: |
+          set -e
+          npm init -y >/dev/null 2>&1
+          npm install xml2js@0.6 >/dev/null 2>&1
+          node - <<'NODE'
+          const fetch = global.fetch;
+          const { parseStringPromise } = require('xml2js');
+
+          const POSTGREST_URL = process.env.POSTGREST_URL;
+          const SERVICE_KEY   = process.env.SERVICE_KEY;
+          const TRAFFIC_URL   = process.env.TRAFFIC_URL;
+
+          const headers = {
+            'apikey': SERVICE_KEY,
+            'Authorization': `Bearer ${SERVICE_KEY}`,
+            'Content-Type': 'application/json',
+            'Prefer': 'resolution=merge-duplicates',
+            'Content-Profile': 'api'
+          };
+
+          const num = x => {
+            if (x === undefined || x === null) return null;
+            const n = Number(x);
+            return Number.isFinite(n) ? n : null;
+          };
+
+          function categorize(speed, flow, acc){
+            if (acc === 0) return 'unknown';
+            if (speed === 0 && flow > 0 && acc >= 50) return 'jam';
+            if (speed === null) return 'unknown';
+            if (speed >= 60) return 'free';
+            if (speed >= 40) return 'moderate';
+            if (speed >= 20) return 'busy';
+            if (speed > 0)   return 'heavy';
+            return 'unknown';
+          }
+
+          (async () => {
+            const r = await fetch(TRAFFIC_URL, { headers: { 'Accept': 'application/xml,text/xml,*/*' } });
+            if (!r.ok) { console.error('Traffic fetch failed', r.status, await r.text()); process.exit(1); }
+            const xml = await r.text();
+
+            // xml2js options: attributes → $
+            const j = await parseStringPromise(xml, {
+              explicitArray: false,
+              mergeAttrs: true,
+              attrkey: '$',
+              tagNameProcessors: [name => name.replace(/^[^:]*:/, '')] // حذف namespace prefix
+            });
+
+            const root = j.traffic_data || j['traffic_data'];
+            if (!root) { console.error('Unexpected XML root'); process.exit(1); }
+
+            const window_start = root.start_time ? new Date(root.start_time).toISOString() : new Date().toISOString();
+            const window_end   = root.end_time   ? new Date(root.end_time).toISOString()   : new Date().toISOString();
+            const generation   = root.generation_time ? new Date(root.generation_time).toISOString() : null;
+
+            let items = root.FDT_data || [];
+            if (!Array.isArray(items)) items = [items];
+
+            const rows = items.map(d => {
+              const a  = d.$ || d;               // attributes
+              const sf = d.speedflow?.$ || d.speedflow;
+
+              const speed = num(sf?.speed);
+              const flow  = num(sf?.flow);
+              const acc   = num(a?.accuracy);
+
+              return {
+                lcd1:          String(a?.lcd1 ?? ''),
+                road_lcd:      a?.Road_LCD ? String(a.Road_LCD) : null,
+                road_name:     a?.Road_name || null,
+                direction:     a?.direction || null,
+                lat:           num(a?.lat),
+                lon:           num(a?.lng),
+                accuracy:      acc,
+                period_min:    num(a?.period),
+
+                // 🔴 جدید: offset_m وارد شود تا PK کامل شود
+                offset_m:      a?.offset != null ? Number(a.offset) : 0,
+
+                window_start:  window_start,
+                window_end:    window_end,
+                generation_time: generation,
+
+                flow_vph:      flow,
+                speed_kmh:     speed,
+
+                congestion:    categorize(speed, flow, acc)
+              };
+            }).filter(r => r.lcd1 && r.direction);
+
+
+            if (rows.length === 0) {
+              console.log('traffic_flow_current: 204 payload_len: 0 (no rows)');
+              return;
+            }
+
+            const resp = await fetch(`${POSTGREST_URL}/traffic_flow_current`, {
+              method: 'POST', headers, body: JSON.stringify(rows)
+            });
+            const body = await resp.text();
+            console.log('traffic_flow_current:', resp.status, 'rows:', rows.length, body || '<no-body>');
+            if (!resp.ok) process.exit(1);
+          })().catch(e => { console.error(e); process.exit(1); });
+          NODE

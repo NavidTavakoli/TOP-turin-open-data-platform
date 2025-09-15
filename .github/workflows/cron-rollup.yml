@@ -1,0 +1,27 @@
+name: Rollup & Purge Weather
+
+on:
+  schedule:
+    - cron: "17 4 * * 6"   # هر شنبه 04:17 UTC
+  workflow_dispatch: {}
+
+jobs:
+  rollup:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - name: Sanity - check required secrets
+        run: |
+          test -n "${{ secrets.POSTGREST_URL }}" || (echo "POSTGREST_URL secret missing" && exit 1)
+          test -n "${{ secrets.SERVICE_KEY }}"   || (echo "SERVICE_KEY secret missing" && exit 1)
+
+      - name: "Call RPC - rollup_and_purge_weather (keep 30d)"
+        env:
+          POSTGREST_URL: ${{ secrets.POSTGREST_URL }}
+          SERVICE_KEY:   ${{ secrets.SERVICE_KEY }}
+        run: |
+          curl -s -X POST "$POSTGREST_URL/rpc/rollup_and_purge_weather" \
+            -H "apikey: $SERVICE_KEY" \
+            -H "Authorization: Bearer $SERVICE_KEY" \
+            -H "Content-Type: application/json" \
+            -d '{"p_keep_days":30}'
