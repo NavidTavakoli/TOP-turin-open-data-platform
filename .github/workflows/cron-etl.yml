@@ -108,6 +108,9 @@ jobs:
 
       
 
+
+
+
       - name: Fetch AQ (WAQI Lingotto @9360) → upsert api.air_quality_current
         env:
           POSTGREST_URL: ${{ secrets.POSTGREST_URL }}
@@ -128,41 +131,50 @@ jobs:
           };
 
           const LAT = 45.0705, LON = 7.6868;
-          const primary = `https://api.waqi.info/feed/@9360/?token=${TOKEN}`;
-          const fallback= `https://api.waqi.info/feed/geo:${LAT};${LON}/?token=${TOKEN}`;
+          const MAX_LAG_MIN = 120;
 
-          const num = x => {
-            const n = Number(x);
-            return Number.isFinite(n) ? n : null;
-          };
-          const toMS = kph => kph==null ? null : Number(kph)/3.6;
+          const urlPrimary  = `https://api.waqi.info/feed/@9360/?token=${TOKEN}`;
+          const urlFallback = `https://api.waqi.info/feed/geo:${LAT};${LON}/?token=${TOKEN}`;
+
+          const num  = x => (Number.isFinite(Number(x)) ? Number(x) : null);
+          const toMS = kph => (kph==null ? null : Number(kph)/3.6);
+
+          async function fetchFeed(url, label) {
+            const r = await fetch(url, { headers: { "Cache-Control": "no-cache" } });
+            if (!r.ok) throw new Error(`${label} failed ${r.status} ${await r.text()}`);
+            const j = await r.json();
+            if (j.status !== 'ok') throw new Error(`${label} status!=ok ${JSON.stringify(j)}`);
+            const d = j.data || {};
+            const ts = d.time?.iso ? new Date(d.time.iso) : null;
+            const lag = ts ? Math.round((Date.now() - ts.getTime())/60000) : null;
+            console.log(`${label} → station:`, d.city?.name, 'idx:', d.idx, 'iso:', d.time?.iso, 'lag_min:', lag);
+            return { d, ts, lag, label };
+          }
 
           (async () => {
-            async function fetchFeed(url, label) {
-              const r = await fetch(url, { headers: { "Cache-Control": "no-cache" } });
-              if (!r.ok) throw new Error(`${label} failed ${r.status} ${await r.text()}`);
-              const j = await r.json();
-              if (j.status !== 'ok') throw new Error(`${label} status!=ok ${JSON.stringify(j)}`);
-              return j;
+            const p = await fetchFeed(urlPrimary, 'WAQI @9360');
+
+            let chosen = p; // پیش‌فرض: primary
+            if (!p.ts || p.lag > MAX_LAG_MIN) {
+              console.warn('Primary stale/absent → checking geo fallback…');
+              try {
+                const g = await fetchFeed(urlFallback, 'WAQI geo');
+                // فقط اگر fallback جدیدتر از primary است جایگزین کن
+                if (g.ts && (!p.ts || g.ts > p.ts)) {
+                  chosen = g;
+                  console.log('Picked:', g.label);
+                } else {
+                  console.log('Picked: primary (fallback not newer)');
+                }
+              } catch (e) {
+                console.warn('Fallback fetch failed:', e.message);
+                console.log('Picked: primary (fallback unavailable)');
+              }
+            } else {
+              console.log('Picked: primary (fresh enough)');
             }
 
-            // 1) primary: @9360
-            let j = await fetchFeed(primary, 'WAQI @9360');
-            let d = j.data || {};
-            let apiTs = d.time?.iso ? new Date(d.time.iso) : null;
-            const lagMin = apiTs ? Math.round((Date.now() - apiTs.getTime())/60000) : null;
-            console.log('WAQI @9360 → station:', d.city?.name, 'idx:', d.idx, 'iso:', d.time?.iso, 'lag_min:', lagMin);
-
-            // اگر داده خیلی قدیمی بود، 2) fallback: نزدیک‌ترین ایستگاه با geo
-            const MAX_LAG_MIN = 120;
-            if (!apiTs || lagMin > MAX_LAG_MIN) {
-              console.warn('Stale/old WAQI @9360 → trying geo fallback…');
-              j = await fetchFeed(fallback, 'WAQI geo');
-              d = j.data || {};
-              apiTs = d.time?.iso ? new Date(d.time.iso) : null;
-              console.log('WAQI geo → station:', d.city?.name, 'idx:', d.idx, 'iso:', d.time?.iso);
-            }
-
+            const d = chosen.d;
             const iaqi = d.iaqi || {};
             const row = {
               station_id: String(d.idx ?? '9360'),
@@ -193,13 +205,10 @@ jobs:
               method: 'POST', headers, body: JSON.stringify([row])
             });
             const body = res.ok ? await res.json() : await res.text();
-            console.log('air_quality_current upsert status:', res.status, 'rows_written:', Array.isArray(body)? body.length: 0);
+            console.log('air_quality_current upsert status:', res.status, 'rows_written:', Array.isArray(body) ? body.length : 0);
             if (!res.ok) { console.error('resp:', body); process.exit(1); }
           })().catch(e => { console.error(e); process.exit(1); });
           NODE
-
-
-
 
 
 
