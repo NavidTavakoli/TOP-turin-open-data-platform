@@ -2,7 +2,7 @@ name: Purge Old Weather & Air Data
 
 on:
   schedule:
-    - cron: "23 3 * * *"   # هر روز 03:23 UTC
+    - cron: "23 3 * * *"     # هر روز 03:23 UTC
   workflow_dispatch: {}
 
 jobs:
@@ -14,6 +14,18 @@ jobs:
         run: |
           test -n "${{ secrets.POSTGREST_URL }}" || (echo "POSTGREST_URL secret missing" && exit 1)
           test -n "${{ secrets.SERVICE_KEY }}"   || (echo "SERVICE_KEY secret missing" && exit 1)
+
+      - name: Sanity - REST root works?
+        env:
+          POSTGREST_URL: ${{ secrets.POSTGREST_URL }}
+          SERVICE_KEY:   ${{ secrets.SERVICE_KEY }}
+        run: |
+          echo "POSTGREST_URL=$POSTGREST_URL"
+          # باید 200 بده؛ اگر 404 شد یعنی /rest/v1 در URL نیست
+          curl -fsS "$POSTGREST_URL/weather_current?select=1&limit=1" \
+            -H "apikey: $SERVICE_KEY" \
+            -H "Authorization: Bearer $SERVICE_KEY" \
+            -H "Accept-Profile: api" >/dev/null
 
       - name: Purge weather (keep 30d)
         env:
@@ -28,7 +40,6 @@ jobs:
             -H "Content-Profile: api" \
             -d '{"p_keep_days":30}'
 
-
       - name: Purge air quality (keep 14d)
         env:
           POSTGREST_URL: ${{ secrets.POSTGREST_URL }}
@@ -38,4 +49,6 @@ jobs:
             -H "apikey: $SERVICE_KEY" \
             -H "Authorization: Bearer $SERVICE_KEY" \
             -H "Content-Type: application/json" \
+            -H "Accept-Profile: api" \
+            -H "Content-Profile: api" \
             -d '{"p_keep_days":14}'
