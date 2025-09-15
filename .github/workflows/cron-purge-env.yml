@@ -22,7 +22,7 @@ jobs:
         run: |
           echo "POSTGREST_URL=$POSTGREST_URL"
           # باید 200 بده؛ اگر 404 شد یعنی /rest/v1 در URL نیست
-          curl -fsS "$POSTGREST_URL/weather_current?select=1&limit=1" \
+          curl -fsS "$POSTGREST_URL/weather_current?select=ts&limit=1" \
             -H "apikey: $SERVICE_KEY" \
             -H "Authorization: Bearer $SERVICE_KEY" \
             -H "Accept-Profile: api" >/dev/null
