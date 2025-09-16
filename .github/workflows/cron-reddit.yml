@@ -35,7 +35,9 @@ jobs:
           test -n "${{ secrets.REDDIT_CLIENT_SECRET }}" || (echo "REDDIT_CLIENT_SECRET missing" && exit 1)
 
 
-      - name: Fetch 50 & Replace (delete-then-insert)
+
+
+      - name: Fetch 50 & Replace previous set (safe prune)
         env:
           POSTGREST_URL:        ${{ secrets.POSTGREST_URL }}
           SERVICE_KEY:          ${{ secrets.SERVICE_KEY }}
@@ -96,23 +98,32 @@ jobs:
               "Content-Profile": "api"
             };
 
-            // 1) همه چیز را پاک کن
-            const delAll = await fetch(`${base}/reddit_torino_posts`, { method: "DELETE", headers });
-            if (!delAll.ok) throw new Error(`DELETE ALL ${delAll.status}: ${await delAll.text()}`);
-            console.log("Table cleared.");
-
-            // 2) اگر چیزی داریم، همان‌ها را درج کن
+            // 1) upsert همین batch
             if (rows.length) {
               const ins = await fetch(`${base}/reddit_torino_posts`, {
                 method: "POST",
-                headers,
+                headers: { ...headers, Prefer: "resolution=ignore-duplicates" },
                 body: JSON.stringify(rows)
               });
-              const body = await ins.text();
-              console.log(`Inserted ${rows.length}. status=${ins.status}; resp:`, body || "<no-body>");
+              const insBody = await ins.text();
+              console.log(`Upsert: ${ins.status}; sent=${rows.length}; resp:`, insBody || "<no-body>");
               if (!ins.ok) throw new Error("insert failed");
             } else {
-              console.log("No rows this run; table remains empty as requested.");
+              console.log("No rows from Reddit this run.");
+            }
+
+            // 2) حذف هر چیزی که داخل همین 50 تا نیست (دارای WHERE ⇒ مجاز)
+            if (rows.length) {
+              const ids = rows.map(x => x.post_id);
+              const delUrl = new URL(`${base}/reddit_torino_posts`);
+              delUrl.searchParams.set("post_id", `not.in.(${ids.map(s => `"${s}"`).join(",")})`);
+              const del = await fetch(delUrl, { method: "DELETE", headers });
+              const delBody = await del.text();
+              console.log(`Pruned others: ${del.status}; resp:`, delBody || "<no-body>");
+              if (!del.ok) throw new Error(`prune failed ${del.status}`);
+            } else {
+              // هیچ آیتمی نداریم ⇒ چیزی حذف نکن (تا جدول خالی نشود)
+              console.log("Skip prune because current batch is empty.");
             }
           })().catch(e => { console.error(e); process.exit(1); });
           NODE
