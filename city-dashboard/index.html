@@ -1,0 +1,41 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+    <title>Turin City Dashboard</title>
+    <meta name="theme-color" content="#0b1220" />
+
+    <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
+    <link rel="apple-touch-icon" href="/apple-touch-icon.png" />
+    <meta name="description" content="Sample KPI dashboard for Turin " />
+    <meta property="og:title" content="Turin City Dashboard" />
+    <meta property="og:description" content="Sample KPI dashboard for Turin" />
+    <meta property="og:image" content="/og.png" />
+    <meta property="og:type" content="website" />
+
+    <!-- Fonts -->
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link href="https://fonts.googleapis.com/css2?family=Sora:wght@400;600;700&family=Inter:wght@400;500;600&display=swap" rel="stylesheet" />
+
+    <!-- Apply saved theme (default: dark+neon ON) before paint -->
+    <script>
+      (function () {
+        try {
+          var savedTheme = localStorage.getItem('theme');
+          var dark = savedTheme ? savedTheme === 'dark' : true; // default: dark ON
+          if (dark) document.documentElement.classList.add('dark');
+
+          var savedNeon = localStorage.getItem('neon');
+          var neon = savedNeon ? savedNeon === 'on' : true; // default: neon ON
+          if (neon) document.documentElement.classList.add('neon');
+        } catch (e) {}
+      })();
+    </script>
+  </head>
+  <body style="margin:0; font-family: Inter, ui-sans-serif, system-ui, -apple-system, Segoe UI, Roboto, Helvetica Neue, Arial;">
+    <div id="root" style="height:100%;"></div>
+    <script type="module" src="/src/main.jsx"></script>
+  </body>
+</html>
