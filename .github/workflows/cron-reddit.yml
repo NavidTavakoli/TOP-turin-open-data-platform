@@ -1,8 +1,8 @@
-name: ETL - Reddit Torino (latest 50, every 2h)
+name: ETL - Reddit Torino (latest 50, every 2h, title+selftext)
 
 on:
   schedule:
-    - cron: "27 */2 * * *"   # هر 2 ساعت (UTC)؛ دقیقه 27 برای دوری از ترافیک
+    - cron: "7 */2 * * *"   # هر 2 ساعت (UTC)؛ دقیقه 7 برای دوری از ترافیک
   workflow_dispatch: {}
 
 jobs:
@@ -34,10 +34,7 @@ jobs:
           test -n "${{ secrets.REDDIT_CLIENT_ID }}"     || (echo "REDDIT_CLIENT_ID missing" && exit 1)
           test -n "${{ secrets.REDDIT_CLIENT_SECRET }}" || (echo "REDDIT_CLIENT_SECRET missing" && exit 1)
 
-
-
-
-      - name: Fetch 50 & Replace previous set (safe prune)
+      - name: Fetch 50 & Keep only this batch (title + selftext)
         env:
           POSTGREST_URL:        ${{ secrets.POSTGREST_URL }}
           SERVICE_KEY:          ${{ secrets.SERVICE_KEY }}
@@ -45,8 +42,9 @@ jobs:
           REDDIT_CLIENT_SECRET: ${{ secrets.REDDIT_CLIENT_SECRET }}
         run: |
           node - <<'NODE'
+          // Node 20 → global fetch موجود است
           const env = process.env;
-          const UA = "TOP-turin-open-data-platform/1.0 (+https://github.com/<user>/<repo>)";
+          const UA  = "TOP-turin-open-data-platform/1.0 (+https://github.com/<user>/<repo>; contact: you@example.com)";
 
           async function getToken() {
             const basic = Buffer.from(`${env.REDDIT_CLIENT_ID}:${env.REDDIT_CLIENT_SECRET}`).toString("base64");
@@ -65,12 +63,13 @@ jobs:
             return j.access_token;
           }
 
-          const clean = s => (s||"").replace(/\s+/g," ").trim();
-          const trunc = (s,n=100) => s.length<=n ? s : s.slice(0,n);
+          // برای title فقط spaceها را تمیز می‌کنیم؛
+          // selftext را خام می‌گذاریم تا Markdown/Formatting حفظ شود.
+          const cleanTitle = s => (s ?? "").replace(/\s+/g, " ").trim();
 
           (async () => {
+            // 1) گرفتن توکن و فچ 50 پست آخر
             const token = await getToken();
-
             const res = await fetch("https://oauth.reddit.com/r/torino/new?limit=50&raw_json=1", {
               headers: { "Authorization": `Bearer ${token}`, "User-Agent": UA, "Accept": "application/json" }
             });
@@ -79,16 +78,17 @@ jobs:
             const j = await res.json();
             const items = Array.isArray(j?.data?.children) ? j.data.children : [];
 
+            // 2) مپ به اسکیمای دیتابیس (title + selftext)
             const rows = items.map(c => {
               const d = c.data || {};
-              const text = clean(d.selftext || d.title || "");
               return {
-                post_id: String(d.id||""),
-                ts: new Date((d.created_utc||0)*1000).toISOString(),
-                text_snippet: trunc(text, 1000),
+                post_id:   String(d.id || ""),
+                ts:        new Date((d.created_utc || 0) * 1000).toISOString(),
+                title:     cleanTitle(d.title || ""),
+                selftext:  d.selftext ?? null, // Markdown خام
                 permalink: d.permalink ? `https://www.reddit.com${d.permalink}` : null
               };
-            }).filter(r => r.post_id && r.text_snippet);
+            }).filter(r => r.post_id && (r.title || r.selftext));
 
             const base = env.POSTGREST_URL.replace(/\/+$/,"");
             const headers = {
@@ -98,32 +98,31 @@ jobs:
               "Content-Profile": "api"
             };
 
-            // 1) upsert همین batch
-            if (rows.length) {
-              const ins = await fetch(`${base}/reddit_torino_posts`, {
-                method: "POST",
-                headers: { ...headers, Prefer: "resolution=ignore-duplicates" },
-                body: JSON.stringify(rows)
-              });
-              const insBody = await ins.text();
-              console.log(`Upsert: ${ins.status}; sent=${rows.length}; resp:`, insBody || "<no-body>");
-              if (!ins.ok) throw new Error("insert failed");
-            } else {
-              console.log("No rows from Reddit this run.");
+            // اگر این نوبت هیچ آیتمی نبود، دیتای قبلی را نگه دار تا سایت خالی نشود
+            if (!rows.length) {
+              console.log("No rows from Reddit this run. Skipping upsert & prune.");
+              return;
             }
 
-            // 2) حذف هر چیزی که داخل همین 50 تا نیست (دارای WHERE ⇒ مجاز)
-            if (rows.length) {
-              const ids = rows.map(x => x.post_id);
-              const delUrl = new URL(`${base}/reddit_torino_posts`);
-              delUrl.searchParams.set("post_id", `not.in.(${ids.map(s => `"${s}"`).join(",")})`);
-              const del = await fetch(delUrl, { method: "DELETE", headers });
-              const delBody = await del.text();
-              console.log(`Pruned others: ${del.status}; resp:`, delBody || "<no-body>");
-              if (!del.ok) throw new Error(`prune failed ${del.status}`);
-            } else {
-              // هیچ آیتمی نداریم ⇒ چیزی حذف نکن (تا جدول خالی نشود)
-              console.log("Skip prune because current batch is empty.");
-            }
+            // 3) Upsert دسته‌ای (از درج تکراری جلوگیری می‌شود)
+            const ins = await fetch(`${base}/reddit_torino_posts`, {
+              method: "POST",
+              headers: { ...headers, Prefer: "resolution=ignore-duplicates" },
+              body: JSON.stringify(rows)
+            });
+            const insBody = await ins.text();
+            console.log(`Upsert: ${ins.status}; sent=${rows.length}; resp:`, insBody || "<no-body>");
+            if (!ins.ok) throw new Error("insert failed");
+
+            // 4) حذف همه‌ی رکوردهایی که در بین همین 50 تای فعلی نیستند (WHERE الزامی → اوکی)
+            const ids = rows.map(x => x.post_id);
+            const delUrl = new URL(`${base}/reddit_torino_posts`);
+            // نقل‌قول دور idها برای ایمنی
+            delUrl.searchParams.set("post_id", `not.in.(${ids.map(s => `"${s}"`).join(",")})`);
+
+            const del = await fetch(delUrl, { method: "DELETE", headers });
+            const delBody = await del.text();
+            console.log(`Pruned others: ${del.status}; resp:`, delBody || "<no-body>");
+            if (!del.ok) throw new Error(`prune failed ${del.status}`);
           })().catch(e => { console.error(e); process.exit(1); });
           NODE
