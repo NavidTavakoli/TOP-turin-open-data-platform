@@ -85,7 +85,7 @@ jobs:
               return {
                 post_id: String(d.id||""),
                 ts: new Date((d.created_utc||0)*1000).toISOString(),
-                text_snippet: trunc(text, 100),
+                text_snippet: trunc(text, 1000),
                 permalink: d.permalink ? `https://www.reddit.com${d.permalink}` : null
               };
             }).filter(r => r.post_id && r.text_snippet);
