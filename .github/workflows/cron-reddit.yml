@@ -2,23 +2,35 @@ name: ETL - Reddit Torino (latest 20)
 
 on:
   schedule:
-    - cron: "13 */3 * * *"   # هر 3 ساعت یک‌بار؛ کم‌هزینه و کافی
+    - cron: "13 */3 * * *"   # هر 3 ساعت (UTC)؛ دقیقه 13 برای دوری از ترافیک
   workflow_dispatch: {}
 
 jobs:
   reddit:
     runs-on: ubuntu-latest
     timeout-minutes: 5
+    concurrency:
+      group: etl-reddit
+      cancel-in-progress: true
+
     steps:
-      - name: Sanity - check required secrets
+      - uses: actions/checkout@v4
+
+      - name: Use Node.js 20
+        uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+
+      - name: Log schedule timing
+        run: |
+          echo "event_name=${{ github.event_name }}"
+          echo "run_started_at=${{ github.run_started_at }}"
+          date -u "+now_utc=%Y-%m-%dT%H:%M:%SZ"
+
+      - name: Sanity - required secrets
         run: |
           test -n "${{ secrets.POSTGREST_URL }}" || (echo "POSTGREST_URL secret missing" && exit 1)
           test -n "${{ secrets.SERVICE_KEY }}"   || (echo "SERVICE_KEY secret missing" && exit 1)
-
-      - name: Setup Node
-        uses: actions/setup-node@v4
-        with:
-          node-version: '20'
 
       - name: Fetch & Upsert r/torino latest 20 (truncate to 100 chars)
         env:
@@ -26,62 +38,57 @@ jobs:
           SERVICE_KEY:   ${{ secrets.SERVICE_KEY }}
         run: |
           node - <<'NODE'
-          // Lightweight ETL for r/torino "new" posts → keep only 100-char text
-          import fetch from 'node-fetch';
+          // Node 20 → global fetch; no node-fetch needed
+          (async () => {
+            const POSTGREST_URL = process.env.POSTGREST_URL;
+            const SERVICE_KEY   = process.env.SERVICE_KEY;
 
-          const POSTGREST_URL = process.env.POSTGREST_URL; // e.g. https://<project>.supabase.co/rest/v1
-          const SERVICE_KEY   = process.env.SERVICE_KEY;
+            const REDDIT_URL = "https://www.reddit.com/r/torino/new.json?limit=20";
+            const UA = "TOP-turin-open-data-platform/1.0 (+https://github.com/<your-user>/<your-repo>)";
 
-          const REDDIT_URL = "https://www.reddit.com/r/torino/new.json?limit=20";
-          const UA = "TOP-turin-open-data-platform/1.0 (+https://github.com/<your-user>/<your-repo>)";
+            const res = await fetch(REDDIT_URL, { headers: { "User-Agent": UA } });
+            if (!res.ok) {
+              const t = await res.text();
+              throw new Error(`Reddit fetch ${res.status}: ${t}`);
+            }
+            const j = await res.json();
+            const items = Array.isArray(j?.data?.children) ? j.data.children : [];
 
-          const res = await fetch(REDDIT_URL, { headers: { "User-Agent": UA } });
-          if (!res.ok) {
-            const t = await res.text();
-            throw new Error(`Reddit fetch ${res.status}: ${t}`);
-          }
-          const j = await res.json();
-          const items = Array.isArray(j?.data?.children) ? j.data.children : [];
+            const clean = (s) => (s || "").replace(/\s+/g, " ").trim();
+            const trunc = (s, n=100) => (s.length <= n ? s : s.slice(0, n));
 
-          // فقط متن: selftext اگر بود؛ وگرنه title؛ سپس truncate به 100 کاراکتر
-          const clean = (s) => (s || "").replace(/\s+/g, " ").trim();
-          const trunc = (s, n=100) => (s.length <= n ? s : s.slice(0, n));
+            const rows = items.map(c => {
+              const d = c.data || {};
+              const text = clean(d.selftext || d.title || "");
+              return {
+                post_id:      String(d.id || ""),
+                ts:           new Date((d.created_utc || 0) * 1000).toISOString(),
+                text_snippet: trunc(text, 100),
+                permalink:    d.permalink ? `https://www.reddit.com${d.permalink}` : null
+              };
+            }).filter(r => r.post_id && r.text_snippet);
 
-          const rows = items.map(c => {
-            const d = c.data || {};
-            const text = clean(d.selftext || d.title || "");
-            return {
-              post_id:      String(d.id || ""),
-              ts:           new Date((d.created_utc || 0) * 1000).toISOString(),
-              text_snippet: trunc(text, 100),
-              permalink:    d.permalink ? `https://www.reddit.com${d.permalink}` : null
-            };
-          })
-          // فیلتر آیتم‌های خالی/بی‌متن یا بی‌ id
-          .filter(r => r.post_id && r.text_snippet);
+            if (!rows.length) {
+              console.log("No rows to insert (maybe subreddit empty).");
+              return;
+            }
 
-          if (!rows.length) {
-            console.log("No rows to insert (maybe subreddit empty).");
-            process.exit(0);
-          }
-
-          // ارسال به PostgREST (upsert بر اساس PK)
-          const ins = await fetch(`${POSTGREST_URL}/reddit_torino_posts`, {
-            method: 'POST',
-            headers: {
+            const headers = {
               'apikey': SERVICE_KEY,
               'Authorization': `Bearer ${SERVICE_KEY}`,
               'Content-Type': 'application/json',
               'Content-Profile': 'api',
-              'Prefer': 'resolution=ignore-duplicates'  // PK مانع تکرار می‌شود
-            },
-            body: JSON.stringify(rows)
-          });
+              'Prefer': 'resolution=ignore-duplicates'
+            };
 
-          if (!ins.ok) {
-            const errTxt = await ins.text();
-            throw new Error(`PostgREST insert ${ins.status}: ${errTxt}`);
-          }
+            const ins = await fetch(`${POSTGREST_URL}/reddit_torino_posts`, {
+              method: 'POST',
+              headers,
+              body: JSON.stringify(rows)
+            });
 
-          console.log(`Inserted/deduped ${rows.length} reddit rows.`);
+            const body = await ins.text();
+            console.log(`PostgREST upsert status: ${ins.status}, rows_sent: ${rows.length}, resp:`, body || '<no-body>');
+            if (!ins.ok) process.exit(1);
+          })().catch(err => { console.error(err); process.exit(1); });
           NODE
