@@ -1,5 +1,0 @@
-name = "top-etl"
-main = "etl-air-weather.ts"
-compatibility_date = "2024-12-01"
-[triggers]
-crons = ["0 */3 * * *"]  # اگر بعداً خواستی از Workers استفاده کنی
