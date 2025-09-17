@@ -192,7 +192,8 @@ Contributions are welcome! Please fork the repository and submit a pull request.
 
 ## License  
 
-This project is distributed under the **MIT License** — see [LICENSE](./LICENSE) for details. 
+This project is distributed under the **MIT License** — see [LICENSE (MIT)](./LICENSE%20(MIT)) for details.  
+
 
 
 ---
