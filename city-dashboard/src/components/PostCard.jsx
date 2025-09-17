@@ -14,7 +14,7 @@ export default function PostCard({ post }) {
   const hasTitle = !!post.title?.trim();
   const hasBody  = !!post.selftext?.trim();
 
-  // بدنه را آماده می‌کنیم (Trim فقط برای زیبایی نمایش)
+
   const body = useMemo(() => (post.selftext || "").trim(), [post.selftext]);
 
   return (
