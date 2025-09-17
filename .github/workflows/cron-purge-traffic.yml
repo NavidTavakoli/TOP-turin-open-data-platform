@@ -2,7 +2,7 @@ name: Purge Old Traffic Data (keep 2 days)
 
 on:
   schedule:
-    - cron: "17 3 */2 * *"   # هر دو روز یک‌بار، 03:17 UTC
+    - cron: "17 3 */2 * *"   # Every 2 days at 03:17 UTC
   workflow_dispatch: {}
 
 jobs:
