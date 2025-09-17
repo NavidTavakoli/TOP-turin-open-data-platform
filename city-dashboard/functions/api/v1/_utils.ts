@@ -29,7 +29,7 @@ export type Env = {
   SUPABASE_SERVICE_ROLE_KEY: string;
 };
 
-// مهم: Accept-Profile = 'api' تا ویوهای schema: api دیده شوند
+
 export async function sbFetch(env: Env, path: string) {
   const url = `${env.SUPABASE_URL}/rest/v1/${path}`;
   const key = env.SUPABASE_SERVICE_ROLE_KEY;
