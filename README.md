@@ -125,7 +125,7 @@ flowchart TD
     classDef rounded fill:#f9f9f9,stroke:#333,stroke-width:1px,rx:20,ry:20
     class A1,A2,A3,A4,B1,C1,C2,D1,D2 rounded
 
-    %% گرد کردن و رنگ دادن به subgraph ها
+ 
     style DataSources fill:#FFFFFF,stroke:#00BF63,stroke-width:2px,rx:25,ry:25
     style ETL fill:#FFBD59,stroke:#FF914D,rx:25,ry:25
     style Database fill:#0097B2,rx:25,ry:25
