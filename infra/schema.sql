@@ -1,6 +1,6 @@
 create schema if not exists api;
 
--- Air quality (روزانه)
+-- Air quality (daily)
 create table if not exists api.air_quality_daily (
   city text not null,
   station_id text not null,
@@ -16,7 +16,7 @@ create table if not exists api.air_quality_daily (
 create index if not exists idx_aqd_city_ts on api.air_quality_daily(city, ts);
 create index if not exists idx_aqd_geom on api.air_quality_daily using gist (point(lon, lat));
 
--- Weather (ساعتی)
+-- Weather (Hourly)
 create table if not exists api.weather_hourly (
   city text not null,
   ts timestamptz not null,
@@ -42,7 +42,7 @@ create table if not exists api.transport_stops (
 );
 create index if not exists idx_ts_type on api.transport_stops(type);
 
--- OSM places (انعطاف با jsonb)
+-- OSM places (flexible with jsonb)
 create table if not exists api.osm_places (
   osm_id text primary key,
   name text,
@@ -54,8 +54,8 @@ create table if not exists api.osm_places (
 create index if not exists idx_op_cat on api.osm_places(category);
 create index if not exists idx_op_meta_gin on api.osm_places using gin (meta_jsonb);
 
--- نمونه View تحلیلی (نزدیک‌ترین ایستگاه حمل‌ونقل به AQ)
--- (تقریبی: join ساده با کمینه فاصله)
+-- Sample analytical view: nearest transport station to AQ
+-- (Approximation: simple join using minimum distance)
 create or replace view api.vw_env_join as
 with aq as (
   select city, station_id, ts, aqi, lat as aq_lat, lon as aq_lon from api.air_quality_daily
