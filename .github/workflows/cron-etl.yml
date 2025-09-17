@@ -2,8 +2,8 @@ name: ETL - Current Weather + Air Quality + Traffic Flow (TOP)
 
 on:
   schedule:
-    - cron: "7 * * * *"   # هر 1 ساعت (UTC) - دقیقه 07 برای دوری از ترافیک
-  workflow_dispatch: {}    # اجرای دستی
+    - cron: "7 * * * *"   # Every 1 hour (UTC) - minute 07 to avoid traffic
+  workflow_dispatch: {}    # Manual execution
 
 jobs:
   etl_now:
@@ -24,8 +24,8 @@ jobs:
       - name: Log schedule timing
         run: |
           echo "event_name=${{ github.event_name }}"
-          echo "run_started_at=${{ github.run_started_at }}"   # زمان شروع به‌نظر GitHub
-          date -u "+now_utc=%Y-%m-%dT%H:%M:%SZ"                # زمان لحظه‌ای Runner
+          echo "run_started_at=${{ github.run_started_at }}"   # Start time according to GitHub
+          date -u "+now_utc=%Y-%m-%dT%H:%M:%SZ"                # Current time of the Runner
 
       - name: Sanity - required secrets
         run: |
@@ -62,7 +62,7 @@ jobs:
             Authorization: `Bearer ${env.SERVICE_KEY}`,
             "Content-Type": "application/json",
             Prefer: "resolution=merge-duplicates",
-            "Content-Profile": "api" // نوشتن در اسکیما api
+            "Content-Profile": "api" // Write into the api schema
           };
 
           (async () => {
@@ -159,7 +159,7 @@ jobs:
               console.warn('Primary stale/absent → checking geo fallback…');
               try {
                 const g = await fetchFeed(urlFallback, 'WAQI geo');
-                // فقط اگر fallback جدیدتر از primary است جایگزین کن
+                // Replace only if fallback is newer than primary
                 if (g.ts && (!p.ts || g.ts > p.ts)) {
                   chosen = g;
                   console.log('Picked:', g.label);
@@ -220,9 +220,9 @@ jobs:
         env:
           POSTGREST_URL: ${{ secrets.POSTGREST_URL }}
           SERVICE_KEY:   ${{ secrets.SERVICE_KEY }}
-          # اگر URL عمومی داری:
+          # If you have a public URL:
           TRAFFIC_URL:   https://opendata.5t.torino.it/get_fdt
-          # اگر URL اختصاصی/امضادار داری، به‌جای خط بالا:
+          # If you have a private/signed URL, instead of the line above:
           # TRAFFIC_URL:   ${{ secrets.TRAFFIC_URL }}
         run: |
           set -e
@@ -302,7 +302,7 @@ jobs:
                 accuracy:      acc,
                 period_min:    num(a?.period),
 
-                // 🔴 جدید: offset_m وارد شود تا PK کامل شود
+                // 🔴 New: include offset_m to complete the PK
                 offset_m:      a?.offset != null ? Number(a.offset) : 0,
 
                 window_start:  window_start,
