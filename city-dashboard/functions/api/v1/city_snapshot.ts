@@ -4,7 +4,7 @@ export const onRequest: PagesFunction<Env> = async (ctx) => {
   const pre = handlePreflight(ctx.request); if (pre) return pre;
 
   try {
-    // اگر ویوت ستون city ندارد، همین بدون فیلتر کافی‌ست
+
     const arr = await sbFetch(ctx.env, "vw_city_snapshot?select=*&order=weather_ts.desc&limit=1");
     const raw = Array.isArray(arr) ? arr[0] : arr;
 
