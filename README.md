@@ -7,7 +7,9 @@
 ![Reddit](https://github.com/NavidTavakoli/TOP-turin-open-data-platform/actions/workflows/cron-reddit.yml/badge.svg)
 ![Traffic Purge](https://github.com/NavidTavakoli/TOP-turin-open-data-platform/actions/workflows/cron-purge-traffic.yml/badge.svg)
 ![Purge Env](https://github.com/NavidTavakoli/TOP-turin-open-data-platform/actions/workflows/cron-purge-env.yml/badge.svg)
-
+![License: MIT](https://img.shields.io/badge/License-MIT-green.svg)
+![Language: JavaScript](https://img.shields.io/badge/Language-JavaScript-yellow.svg)
+![Runtime: Node.js](https://img.shields.io/badge/Runtime-Node.js%2020-brightgreen.svg)
 
 
 ![Demo 001](https://github.com/NavidTavakoli/TOP-turin-open-data-platform/blob/main/Demo%20001.png)
