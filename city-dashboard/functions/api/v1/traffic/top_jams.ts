@@ -7,7 +7,7 @@ export const onRequest: PagesFunction<Env> = async (ctx) => {
     const url = new URL(ctx.request.url);
     const limit = url.searchParams.get("limit") ?? "10";
 
-    // اگر ویو api.vw_traffic_top_jams نداری، این call خطا می‌دهد؛ ما catch می‌کنیم و [] برمی‌گردونیم
+
     const path = `vw_traffic_top_jams?select=*&limit=${limit}`;
     const items: any[] = await sbFetch(ctx.env, path);
 
@@ -27,7 +27,7 @@ export const onRequest: PagesFunction<Env> = async (ctx) => {
 
     return okJSON(normalized, { "Cache-Control": "s-maxage=30, stale-while-revalidate=60" });
   } catch (e: any) {
-    // فعلاً خالی برگردون تا UI نخوابه
+
     console.error("top_jams error:", e?.message || e);
     return okJSON([], { "Cache-Control": "s-maxage=5" });
   }
