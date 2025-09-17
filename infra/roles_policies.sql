@@ -2,23 +2,23 @@
 -- Roles & Policies (Safe/Idempotent) for TOP (Supabase/PostgREST)
 -- ============================================================
 
--- 1) پایهٔ مجوزها: anon/authenticated بتوانند از اسکیما api استفاده کنند
+-- 1) Base permissions: allow anon/authenticated to use schema api
 grant usage on schema api to anon, authenticated;
 
--- اجازهٔ SELECT روی همهٔ جدول‌های موجود در api
+-- Allow SELECT on all existing tables in api
 grant select on all tables in schema api to anon, authenticated;
 
--- پیش‌فرض برای جدول‌های آینده: خودکار SELECT به anon/authenticated بده
+-- Default for future tables: automatically grant SELECT to anon/authenticated
 alter default privileges in schema api
   grant select on tables to anon, authenticated;
 
--- 2) فعال‌سازی RLS روی جدول‌ها (ایمن است؛ اگر فعال باشد، خطا نمی‌دهد)
+-- 2) Enable RLS on tables (safe; no error if already enabled)
 alter table if exists api.air_quality_daily   enable row level security;
 alter table if exists api.weather_hourly      enable row level security;
 alter table if exists api.transport_stops     enable row level security;
 alter table if exists api.osm_places          enable row level security;
 
--- 3) ساخت پالیسی‌های فقط-خواندن، «فقط اگر وجود ندارند»
+-- 3) Create read-only policies, "only if they don’t already exist"
 do $$
 begin
   if not exists (
