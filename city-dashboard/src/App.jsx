@@ -18,10 +18,6 @@ import {
 
 
 
-
-
-
-
 const CITY = "Turin";
 const DEFAULT_CENTER = { lat: 45.0705, lng: 7.6868 };
 const API_BASE = import.meta?.env?.VITE_API_BASE_URL || "";
@@ -79,13 +75,13 @@ function FitBounds({ bounds }) {
 function MetricRow({ icon: Icon, label, value, unit }) {
   return (
     <div className="flex items-baseline py-2">
-      {/* ستون برچسب ثابت؛ باعث میشه عددها زیاد از بخش خودشون دور نشن */}
+      {/* Fixed label column to keep numbers aligned with their section */}
       <div className="flex items-center gap-2 text-slate-500 dark:text-slate-400 w-32 min-w-32">
         <Icon size={16} className="opacity-75" />
         <span className="text-[13px]">{label}</span>
       </div>
 
-      {/* مقدار */}
+      {/* Value */}
       <div className="ml-2 tabular-nums text-[15px] font-semibold text-slate-900 dark:text-slate-100">
         {value ?? "—"}
         {unit ? (
@@ -151,7 +147,7 @@ function TrafficCard({ snapshot }) {
             </div>
           </div>
 
-          {/* Heavy & Jam (راست‌چین، نزدیک هم) */}
+          {/* Heavy & Jam — right-aligned, tightly spaced */}
           <div className="col-span-1 justify-self-end text-right">
             <div className="flex items-center justify-end gap-2 text-xs text-slate-500 dark:text-slate-400">
               <span>Heavy</span>
@@ -304,7 +300,7 @@ export default function App() {
           fetch(`${API_BASE}/api/v1/traffic/top_jams?city=${encodeURIComponent(CITY)}&limit=20`),
           fetch(`${API_BASE}/api/v1/city_snapshot/history?city=${encodeURIComponent(CITY)}&hours=24`),
 
-          // ← NEW: خواندن 50 پست آخر از جدول api.reddit_torino_posts
+          // ← NEW: Read the last 50 posts from table api.reddit_torino_posts
 
           fetch(`${API_BASE}/api/v1/reddit_torino_posts?select=post_id,ts,title,selftext,permalink&order=ts.desc&limit=50`,
             { headers: { "Accept-Profile": "api" } })
@@ -460,10 +456,6 @@ export default function App() {
         </div>
 
 
-          
-
-
-
         {/* Map (left) + Reddit (right) + two cards under map */}
         <div className="grid grid-cols-1 lg:grid-cols-3 lg:grid-rows-[500px_auto] gap-6 items-start">
           {/* LEFT: Map (shorter) */}
@@ -556,10 +548,10 @@ export default function App() {
                     barCategoryGap={28}
                     margin={{ top: 12, right: 12, bottom: 6, left: 0 }}
                   >
-                    {/* خطوط پس‌زمینه ملایم */}
+                    {/* Soft background guide lines */}
                     <CartesianGrid strokeDasharray="3 3" vertical={false} opacity={0.25} />
 
-                    {/* محور‌ها ساده و کم‌تراکم */}
+                    {/* Simple, less dense axes */}
                     <XAxis
                       dataKey="name"
                       tick={{ fontSize: 11 }}
@@ -575,7 +567,7 @@ export default function App() {
                       domain={[0, (dataMax) => Math.ceil(dataMax * 1.15)]}
                     />
 
-                    {/* Tooltip مینیمال و حرفه‌ای */}
+                    {/* Clean and professional minimal tooltip */}
                     <Tooltip
                       cursor={{ opacity: 0.1 }}
                       content={({ active, payload, label }) => {
@@ -599,7 +591,7 @@ export default function App() {
                       }}
                     />
 
-                    {/* خطوط مرجع WHO (اگر خواستی) */}
+                    {/* Optional WHO guideline lines */}
                     {[
                       { key: "PM2.5", val: 25, color: "#10b981" },
                       { key: "NO₂",   val: 40, color: "#f59e0b" },
@@ -622,7 +614,7 @@ export default function App() {
                       />
                     ))}
 
-                    {/* میله‌ها: بدون لیبل عددی روی میله (دیگه تکرار نداریم) */}
+                    
                     <Bar
                       dataKey="value"
                       isAnimationActive
@@ -630,9 +622,7 @@ export default function App() {
                       animationDuration={820}
                       animationEasing="ease-out"
                       shape={(props) => {
-                        // RoundedBar سفارشی شما اگر دارید:
-                        // return <RoundedBar {...props} />;
-                        // یا ساده:
+    
                         const { x, y, width, height, payload } = props;
                         const radius = 10;
                         const fill = (POL_GRADS[payload.name]?.[0] || "#22c55e");
@@ -650,7 +640,7 @@ export default function App() {
                       }}
                     />
 
-                    {/* تعریف گرادینت برای هر آلاینده (ملایم و مدرن) */}
+                    {/* Gradient definition per pollutant */}
                     <defs>
                       {pollutants.map((p) => {
                         const c = POL_GRADS[p.name] || ["#22c55e", "#86efac"];
@@ -666,7 +656,7 @@ export default function App() {
                 </ResponsiveContainer>
               </div>
 
-              {/* لگند جمع‌وجور بدون اعداد تکراری */}
+              {/* Compact legend */}
               <div className="mt-3 flex items-center gap-4 text-[11px]">
                 {pollutants.map((p) => (
                   <div key={p.name} className="flex items-center gap-2">
@@ -681,7 +671,7 @@ export default function App() {
                   </div>
                 ))}
 
-                {/* خلاصه‌ی هوشمند (اختیاری): بیشینه */}
+                {/* Optional smart summary: max value */}
                 {(() => {
                   const max = pollutants?.reduce((a, b) => (a.value > b.value ? a : b), { value: -1 });
                   if (!max || max.value < 0) return null;
@@ -704,10 +694,10 @@ export default function App() {
                     data={tempSeries}
                     margin={{ top: 10, right: 14, bottom: 8, left: 0 }}
                   >
-                    {/* پس‌زمینه‌ی لطیف و خطوط افقی */}
+                    
                     <CartesianGrid strokeDasharray="3 3" vertical={false} opacity={0.22} />
 
-                    {/* Comfort band: 18–24 °C (در صورت نیاز اعداد را عوض کن) */}
+                    
                     <ReferenceArea
                       y1={18}
                       y2={24}
@@ -717,7 +707,7 @@ export default function App() {
                       strokeOpacity={0}
                     />
 
-                    {/* محور‌ها: ساده و خلوت */}
+                    
                     <XAxis
                       dataKey="time"
                       interval="preserveStartEnd"
@@ -737,7 +727,7 @@ export default function App() {
                       tickLine={false}
                     />
 
-                    {/* Tooltip سفارشی و مینیمال */}
+                    
                     <Tooltip
                       cursor={{ strokeOpacity: 0.05 }}
                       content={({ active, payload, label }) => {
@@ -754,7 +744,7 @@ export default function App() {
                       }}
                     />
 
-                    {/* گرادیان برای فیل و استروک */}
+                    
                     <defs>
                       <linearGradient id="tempFill" x1="0" y1="0" x2="0" y2="1">
                         <stop offset="0%" stopColor="#60a5fa" stopOpacity="0.35" />
@@ -766,7 +756,7 @@ export default function App() {
                       </linearGradient>
                     </defs>
 
-                    {/* Area + خط بالایی (نقاط فقط در hover با Tooltip) */}
+                    
                     <Area
                       type="monotone"
                       dataKey="temp"
@@ -783,7 +773,7 @@ export default function App() {
                 </ResponsiveContainer>
               </div>
 
-              {/* خلاصه‌ی Min / Avg / Max */}
+              
               {(() => {
                 const vals = tempSeries?.map(d => Number(d.temp)).filter(n => Number.isFinite(n)) ?? [];
                 if (!vals.length) return null;
