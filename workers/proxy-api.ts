@@ -1,4 +1,4 @@
-// Proxy برای خواندن عمومی بدون لو رفتن anon key
+// Proxy for public reads without exposing the anon key
 // ENV:
 //  - POSTGREST_PUBLIC_URL (Supabase REST endpoint)
 //  - ANON_KEY
@@ -8,7 +8,7 @@ interface Env { POSTGREST_PUBLIC_URL: string; ANON_KEY: string; }
 export default {
   async fetch(req: Request, env: Env) {
     const url = new URL(req.url);
-    // مسیرهایی مثل /api/turin/air_quality_daily?city=eq.Turin
+    // Example path: /api/turin/air_quality_daily?city=eq.Turin
     if (url.pathname.startsWith("/api/")) {
       const upstream = env.POSTGREST_PUBLIC_URL + url.pathname.replace("/api", "");
       const u = new URL(upstream);
