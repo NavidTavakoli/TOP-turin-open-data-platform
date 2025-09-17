@@ -148,15 +148,24 @@ flowchart TD
 
 ## 🌍 Why This Project Matters
 
-This project showcases the **importance of KPIs** in smart cities:
+Smart cities need more than just open data — they need **actionable insights**.  
+By automating ETL pipelines and centralizing diverse datasets (weather, air quality, traffic, and citizen sentiment), **TOP – Turin Open Data Platform** transforms raw information into **Key Performance Indicators (KPIs)** that decision-makers can trust.
 
-- Monitoring **environmental health** (air & weather).
-- Managing **urban mobility** (traffic).
-- Understanding **citizen engagement** (social media).
-- Creating **data transparency** and **evidence-based policies**.
+### 📌 Why KPIs?
+KPIs are not just numbers; they are the **pulse of the city**:
+- **Municipalities & City Planners** → Monitor mobility, congestion, and pollution in real time to support evidence-based policies.  
+- **Environmental Agencies** → Track emissions and weather patterns for sustainability and climate action.  
+- **Transport Authorities** → Optimize public transport and traffic flows with near real-time mobility data.  
+- **Healthcare & Public Safety** → Use AQI trends and extreme weather alerts for risk prevention and community health.  
+- **Research & Academia** → Access clean, integrated datasets to build models for smarter, greener urban futures.  
 
-By automating open data collection and presenting it through a clear dashboard, **TOP** can inspire scalable applications for other cities worldwide.
+### 🚀 Impact
+With TOP, a city can go from **reactive monitoring** to **proactive management**:  
+- From **reacting** to traffic jams → to **predicting and preventing** congestion.  
+- From **periodic pollution reports** → to **continuous air quality surveillance**.  
+- From **static dashboards** → to **scalable, automated KPI pipelines** that work 24/7.  
 
+This project is a **prototype for any city worldwide**: plug in local data sources, get instant REST APIs and dashboards, and unlock the power of KPIs for smarter governance.
 
 
 ## 🎯 Next Steps
