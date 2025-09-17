@@ -190,6 +190,11 @@ Contributions are welcome! Please fork the repository and submit a pull request.
 - GitHub Actions for CI/CD workflows
 - Open APIs providing weather, air quality, and traffic data
 
+## License  
+
+This project is distributed under the **MIT License** — see [LICENSE](./LICENSE) for details. 
+
+
 ---
 
 📝 Produced by [**Navid Tavakoli Shalmani**](https://navidtavakolishalmani.com/)
