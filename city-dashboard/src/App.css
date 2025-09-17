@@ -41,9 +41,9 @@
   color: #888;
 }
 
-/* نمونه: کارت سفارشی یا override های جزئی */
+
 .dashboard-card { border-radius: 1rem; }
 
-/* اگر جایی لازم داری leaflet را override کنی */
+
 .leaflet-container { font-family: inherit; }
 
