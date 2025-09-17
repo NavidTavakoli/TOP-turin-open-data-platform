@@ -2,7 +2,7 @@ name: Purge Old Weather & Air Data
 
 on:
   schedule:
-    - cron: "23 3 * * *"     # هر روز 03:23 UTC
+    - cron: "23 3 * * *"     # Every day at 03:23 UTC
   workflow_dispatch: {}
 
 jobs:
@@ -21,7 +21,7 @@ jobs:
           SERVICE_KEY:   ${{ secrets.SERVICE_KEY }}
         run: |
           echo "POSTGREST_URL=$POSTGREST_URL"
-          # باید 200 بده؛ اگر 404 شد یعنی /rest/v1 در URL نیست
+          # Should return 200; if you get 404 it means /rest/v1 is missing in the URL
           curl -fsS "$POSTGREST_URL/weather_current?select=ts&limit=1" \
             -H "apikey: $SERVICE_KEY" \
             -H "Authorization: Bearer $SERVICE_KEY" \
