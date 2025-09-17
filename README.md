@@ -1,12 +1,5 @@
-[Readme.md](https://github.com/user-attachments/files/22389787/Readme.md)
 
-
-
-
-
-
-
-[Uploadi# **TOP – Turin Open Data Platform**
+# **TOP – Turin Open Data Platform**
 
 *A Demo of near real-time urban data platform highlighting the importance of KPIs in smart cities*
 ## 🚦 ETL Status <img src="https://github.com/NavidTavakoli/TOP-turin-open-data-platform/blob/main/green-dot.gif" alt="blinker" width="20"/>
