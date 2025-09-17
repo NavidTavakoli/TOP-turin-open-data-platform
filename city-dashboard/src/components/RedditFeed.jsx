@@ -4,8 +4,8 @@ import PostCard from "./PostCard";
 
 export default function RedditFeed({
   API_BASE,
-  height = "100%",       // می‌تونی 100% بدهی تا کل سلول گرید را پر کند
-  className = "",        // برای کلاس‌های اضافی از والد
+  height = "100%",       
+  className = "",        
 }) {
   const [posts, setPosts] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -43,10 +43,10 @@ export default function RedditFeed({
   return (
     <section
       className={[
-        // ظاهر کارت
+        
         "w-full rounded-2xl border border-orange-300",,
         "bg-green-50 dark:bg-green-900/40 shadow-sm p-4 sm:p-6",
-        // برای سازگاری با گرید: عمودی، تمام قد، بدون مین-height اضافی
+        
         "flex flex-col h-full min-h-0",
         className,
       ].join(" ")}
