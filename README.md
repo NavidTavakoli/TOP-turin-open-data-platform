@@ -1,5 +1,12 @@
-[Readme.md](https://github.com/user-attachments/files/22389341/Readme.md)
-# **TOP – Turin Open Data Platform**
+[Readme.md](https://github.com/user-attachments/files/22389787/Readme.md)
+
+
+
+
+
+
+
+[Uploadi# **TOP – Turin Open Data Platform**
 
 *A Demo of near real-time urban data platform highlighting the importance of KPIs in smart cities*
 
@@ -45,17 +52,23 @@ The platform integrates multiple APIs into a single PostgreSQL database hosted o
 
 
 
-## ⚙️ Automation with GitHub Actions
+## ⚙️ ETL & Workflows
 
-All data collection and maintenance tasks are fully automated using **GitHub Actions**, scheduled via CRON.
- Workflows are located under `.github/workflows`:
+All pipelines are automated using **GitHub Actions**, located in `.github/workflows`.
 
-- **`cron-etl.yml`** → ETL pipelines that fetch data from external APIs and insert them into Supabase.
-- **`cron-rollup.yml`** → Weekly rollup & cleanup for weather data.
-- **`cron-purge-traffic.yml`** → Bi-daily purge of old traffic data to keep the database lean.
-- **`cron-reddit.yml`** → Fetches and stores the latest 50 community posts every 3 hours.
+| Workflow file                | Purpose                                                      |
+| ---------------------------- | ------------------------------------------------------------ |
+| **`cron-etl.yml`**           | Fetches and ingests fresh datasets (weather, air quality, traffic, Reddit). Runs on a schedule to ensure near real-time updates. |
+| **`cron-purge-env.yml`**     | Cleans redundant or outdated **environmental data** from the database, keeping storage optimized. |
+| **`cron-purge-traffic.yml`** | Purges stale **traffic data** to maintain only relevant and recent mobility information. |
+| **`cron-reddit.yml`**        | Collects and processes the **latest Reddit posts** about Turin, reflecting real-time citizen sentiment. |
 
-These pipelines ensure that the database remains **fresh, lightweight, and near real-time oriented**.
+**Pipeline flow:**
+
+1. Workflows fetch raw data from external APIs.
+2. ETL jobs clean and preprocess the data.
+3. Data is inserted into **Supabase (PostgreSQL)** for structured storage.
+4. The City Dashboard queries Supabase to visualize KPIs in real-time.
 
 
 
@@ -83,10 +96,10 @@ This dashboard illustrates how **data-driven insights** can help policymakers, r
 
 ## 🛠 Tech Stack
 
-- **Backend / Data Pipeline**: GitHub Actions, Python, APIs
-- **Database**: Supabase (PostgreSQL)
-- **Frontend**: Web-based City Dashboard (JavaScript, HTML, CSS, Charts)
-- **Visualization**: Graphs & real-time charts for KPIs
+- **Backend / Data Pipeline**: [GitHub Actions](https://github.com/features/actions), APIs, [Node.js ](https://nodejs.org/en)
+- **Database**:  [Supabase | The Postgres Development Platform.](https://supabase.com/) (PostgreSQL)
+- **Frontend**: Web-based City Dashboard ( [JavaScript](https://www.w3schools.com/js/), [HTML ](https://www.w3schools.com/Html/), [CSS ](https://www.w3schools.com/css/))
+- **Visualization**: Graphs & real-time charts for KPIs ([Apache ECharts](https://echarts.apache.org/))
 
 ```mermaid
 flowchart TD
@@ -131,7 +144,6 @@ flowchart TD
     style Database fill:#0097B2,rx:25,ry:25
     style Dashboard fill:#00BF63,rx:25,ry:25
 
-
 ```
 
 
@@ -167,6 +179,17 @@ Contributions are welcome! Please fork the repository and submit a pull request.
 - Supabase for managed PostgreSQL
 - GitHub Actions for CI/CD workflows
 - Open APIs providing weather, air quality, and traffic data
+
+
+
+ng Readme.md…]()
+
+
+
+
+
+
+
 
 
 
