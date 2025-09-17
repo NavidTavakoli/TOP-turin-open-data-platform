@@ -13,11 +13,11 @@ function pickTextColor(hex) {
 function approxCharW(fontPx){ return fontPx * 0.62 } // تخمین عرض هر کاراکتر
 
 /**
- * متن خمیده به‌صورت کاراکتر-به-کاراکتر روی یک قوس
- * cx, cy: مرکز
- * r: شعاع خط متن
- * mid: مقدار میانی (۰..۵۰۰) برای تعیین زاویه مرکز متن روی نیم‌دایره گیج
- * rtl: اگر true، متن از راست به چپ چیده می‌شود (برای فارسی)
+ * Curved text rendered character-by-character along an arc
+ * cx, cy: center
+ * r: radius of the text path
+ * mid: midpoint value (0..500) to determine the central angle on the gauge’s semicircle
+ * rtl: if true, text is laid out right-to-left (for Persian)
  */
 function makeCurvedTextElements({ cx, cy, r, mid, text, fontPx, color, rtl=false }) {
   const txtColor = "#ffffff"; // همه متن سفید
@@ -25,7 +25,7 @@ function makeCurvedTextElements({ cx, cy, r, mid, text, fontPx, color, rtl=false
   const lineGap = Math.max(2, Math.round(fontPx*0.2));
   const elems = [];
 
-  const spacingFactor = 0.70; // هرچی بیشتر، فاصله بیشتر
+  const spacingFactor = 0.70; // Increasing value increases spacing
 
   lines.forEach((line, li) => {
     if (!line) return;
@@ -67,7 +67,7 @@ function makeCurvedTextElements({ cx, cy, r, mid, text, fontPx, color, rtl=false
           fill: txtColor,
           textAlign: 'center',
           textVerticalAlign: 'middle',
-          shadowColor: "rgba(0,0,0,.4)", // سایه برای خوانایی
+          shadowColor: "rgba(0,0,0,.4)", 
           shadowBlur: 4,
         },
       });
@@ -81,17 +81,17 @@ function makeCurvedTextElements({ cx, cy, r, mid, text, fontPx, color, rtl=false
 export default function AqiGaugeECharts({
   value = 0,
   height = 260,
-  radius = "105%",   // درصد از ضلع کوچک کانتینر
-  centerY = "82%",   // موقعیت عمودی مرکز
+  radius = "105%",   
+  centerY = "82%",   
   lineWidth = 18,
   pointerWidth = 5,
-  labelFont = 12,    // سایز فونت لیبل‌های روی قوس
-  rtlLabels = false, // اگر لیبل‌ها فارسی/RTL هستند، true کن
+  labelFont = 12,    
+  rtlLabels = false, 
 }) {
   const v = Math.max(0, Math.min(500, Number(value) || 0));
   const chartRef = useRef(null);
 
-  // محدوده‌ها و رنگ‌ها + متن لیبل‌ها
+
   const labels = useMemo(() => ([
     { mid:  25, text: "Very Good",      color: "#86efac" },
     { mid:  75, text: "Good",           color: "#22c55e" },
@@ -101,7 +101,7 @@ export default function AqiGaugeECharts({
     { mid: 450, text: "Hazardous",      color: "#7f1d1d" },
   ]), []);
 
-  // پیکربندی خودِ گیج
+  
   const option = useMemo(() => ({
     series: [{
       type: "gauge",
@@ -151,7 +151,7 @@ export default function AqiGaugeECharts({
     }],
   }), [v, radius, centerY, lineWidth, pointerWidth]);
 
-  // رسم متن‌های خمیده
+  
   const renderGraphic = useCallback(() => {
     const chart = chartRef.current;
     if (!chart) return;
@@ -166,7 +166,7 @@ export default function AqiGaugeECharts({
       ? (minSide * (parseFloat(radius) / 100)) / 2
       : Number(radius);
 
-    // متن روی وسط ضخامت قوس قرار بگیرد
+    
     const rLabel = r - lineWidth * 0.50;
 
     const elements = [];
@@ -180,7 +180,7 @@ export default function AqiGaugeECharts({
     chart.setOption({ graphic: { elements } }, { replaceMerge: ["graphic"] });
   }, [centerY, radius, lineWidth, labelFont, labels, rtlLabels]);
 
-  // پس از آماده‌شدن چارت و هر بار تغییر اندازه/آپشن، متن‌ها را دوباره رسم کن
+  
   const onReady = (inst) => {
     chartRef.current = inst;
     renderGraphic();
