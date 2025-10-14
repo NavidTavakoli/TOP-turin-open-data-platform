@@ -154,7 +154,7 @@ jobs:
           (async () => {
             const p = await fetchFeed(urlPrimary, 'WAQI @9360');
 
-            let chosen = p; // پیش‌فرض: primary
+            let chosen = p; // Default: primary
             if (!p.ts || p.lag > MAX_LAG_MIN) {
               console.warn('Primary stale/absent → checking geo fallback…');
               try {
