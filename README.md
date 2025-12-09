@@ -1,7 +1,7 @@
 
 # **TOP – Turin Open Data Platform**
 
-*A Demo of near real-time urban data platform highlighting the importance of KPIs in smart cities*
+*A Demo of near real-time urban data platform highlighting the importance of KPIs in smart cities.*
 ## 🚦 ETL Status <img src="https://github.com/NavidTavakoli/TOP-turin-open-data-platform/blob/main/green-dot.gif" alt="blinker" width="20"/>
 ![ETL](https://github.com/NavidTavakoli/TOP-turin-open-data-platform/actions/workflows/cron-etl.yml/badge.svg)
 ![Reddit](https://github.com/NavidTavakoli/TOP-turin-open-data-platform/actions/workflows/cron-reddit.yml/badge.svg)
