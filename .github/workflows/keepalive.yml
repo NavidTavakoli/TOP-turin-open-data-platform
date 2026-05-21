@@ -2,12 +2,14 @@ name: Keep Repository Active
 
 on:
   schedule:
-    # Run monthly to prevent scheduled workflows from being disabled for inactivity
     - cron: "0 3 1 * *"
   workflow_dispatch:
 
 permissions:
   contents: write
+
+env:
+  FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: true
 
 concurrency:
   group: keep-repository-active
