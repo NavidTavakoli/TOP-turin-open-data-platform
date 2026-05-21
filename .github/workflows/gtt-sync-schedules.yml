@@ -4,15 +4,23 @@ on:
   workflow_dispatch:
     inputs:
       dry_run:
-        description: 'Run in dry-run mode (no database writes)'
+        description: "Run in dry-run mode (no database writes)"
         type: boolean
         required: true
         default: true
 
+permissions:
+  contents: read
+
 jobs:
-  sync:
-    name: Sync GTT Schedules
+  sync_gtt_schedules:
+    name: Sync GTT Static Schedules
     runs-on: ubuntu-latest
+    timeout-minutes: 30
+
+    concurrency:
+      group: gtt-static-schedules-sync
+      cancel-in-progress: true
 
     defaults:
       run:
@@ -20,40 +28,51 @@ jobs:
 
     steps:
       - name: Checkout Repository
-        uses: actions/checkout@v5
+        uses: actions/checkout@v4
 
-      - name: Set up Node.js
+      - name: Use Node.js 20
         uses: actions/setup-node@v4
         with:
-          node-version: 24
-          cache: 'npm'
+          node-version: "20"
+          cache: "npm"
           cache-dependency-path: city-dashboard/package-lock.json
+
+      - name: Log run timing
+        run: |
+          echo "event_name=${{ github.event_name }}"
+          echo "dry_run=${{ inputs.dry_run }}"
+          echo "run_started_at=${{ github.run_started_at }}"
+          date -u "+now_utc=%Y-%m-%dT%H:%M:%SZ"
 
       - name: Install Dependencies
         run: npm ci
 
-      - name: Execute GTFS Schedule Sync
+      - name: Dry-run full GTT schedule sync
+        if: ${{ inputs.dry_run == true }}
+        run: |
+          echo "Running GTT schedules sync in DRY-RUN mode..."
+          node scripts/sync-gtt-stops.cjs --sync-schedules-full --dry-run
+
+      - name: Sanity - required secrets for live sync
+        if: ${{ inputs.dry_run == false }}
+        run: |
+          test -n "${{ secrets.POSTGREST_URL }}" || (echo "POSTGREST_URL secret missing" && exit 1)
+          test -n "${{ secrets.SERVICE_KEY }}"   || (echo "SERVICE_KEY secret missing" && exit 1)
+
+      - name: Live full GTT schedule sync
+        if: ${{ inputs.dry_run == false }}
         env:
           RAW_POSTGREST_URL: ${{ secrets.POSTGREST_URL }}
-          SERVICE_KEY: ${{ secrets.SERVICE_KEY }}
+          SERVICE_KEY:       ${{ secrets.SERVICE_KEY }}
         run: |
-          if [ "${{ inputs.dry_run }}" = "true" ]; then
-            echo "Running sync in DRY-RUN mode..."
-            node scripts/sync-gtt-stops.cjs --sync-schedules-full --dry-run
-          else
-            echo "Checking required environment variables for live sync..."
+          echo "Preparing Supabase environment variables..."
 
-            if [ -z "$RAW_POSTGREST_URL" ] || [ -z "$SERVICE_KEY" ]; then
-              echo "::error::POSTGREST_URL and SERVICE_KEY secrets must be configured in GitHub Secrets for live sync."
-              exit 1
-            fi
+          # Convert:
+          # https://xxxx.supabase.co/rest/v1
+          # to:
+          # https://xxxx.supabase.co
+          export SUPABASE_URL="${RAW_POSTGREST_URL%/rest/v1}"
+          export SUPABASE_SERVICE_ROLE_KEY="$SERVICE_KEY"
 
-            # Normalize Supabase URL:
-            # If POSTGREST_URL is https://xxxx.supabase.co/rest/v1,
-            # convert it to https://xxxx.supabase.co
-            export SUPABASE_URL="${RAW_POSTGREST_URL%/rest/v1}"
-            export SUPABASE_SERVICE_ROLE_KEY="$SERVICE_KEY"
-
-            echo "Running live sync..."
-            node scripts/sync-gtt-stops.cjs --sync-schedules-full
-          fi
+          echo "Running GTT schedules LIVE sync..."
+          node scripts/sync-gtt-stops.cjs --sync-schedules-full
