@@ -5,6 +5,9 @@ on:
     - cron: "7 */2 * * *"   # Every 2 hours (UTC); minute 7 to avoid traffic
   workflow_dispatch: {}
 
+permissions:
+  contents: read
+  
 jobs:
   reddit:
     runs-on: ubuntu-latest
