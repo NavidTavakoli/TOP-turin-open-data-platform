@@ -20,12 +20,12 @@ jobs:
 
     steps:
       - name: Checkout Repository
-        uses: actions/checkout@v4
+        uses: actions/checkout@v5
 
       - name: Set up Node.js
         uses: actions/setup-node@v4
         with:
-          node-version: 20
+          node-version: 24
           cache: 'npm'
           cache-dependency-path: city-dashboard/package-lock.json
 
@@ -34,18 +34,26 @@ jobs:
 
       - name: Execute GTFS Schedule Sync
         env:
-          SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
-          SUPABASE_SERVICE_ROLE_KEY: ${{ secrets.SUPABASE_SERVICE_ROLE_KEY }}
+          RAW_POSTGREST_URL: ${{ secrets.POSTGREST_URL }}
+          SERVICE_KEY: ${{ secrets.SERVICE_KEY }}
         run: |
           if [ "${{ inputs.dry_run }}" = "true" ]; then
             echo "Running sync in DRY-RUN mode..."
             node scripts/sync-gtt-stops.cjs --sync-schedules-full --dry-run
           else
             echo "Checking required environment variables for live sync..."
-            if [ -z "$SUPABASE_URL" ] || [ -z "$SUPABASE_SERVICE_ROLE_KEY" ]; then
-              echo "::error::SUPABASE_URL and SUPABASE_SERVICE_ROLE_KEY secrets must be configured in GitHub Secrets for live sync."
+
+            if [ -z "$RAW_POSTGREST_URL" ] || [ -z "$SERVICE_KEY" ]; then
+              echo "::error::POSTGREST_URL and SERVICE_KEY secrets must be configured in GitHub Secrets for live sync."
               exit 1
             fi
+
+            # Normalize Supabase URL:
+            # If POSTGREST_URL is https://xxxx.supabase.co/rest/v1,
+            # convert it to https://xxxx.supabase.co
+            export SUPABASE_URL="${RAW_POSTGREST_URL%/rest/v1}"
+            export SUPABASE_SERVICE_ROLE_KEY="$SERVICE_KEY"
+
             echo "Running live sync..."
             node scripts/sync-gtt-stops.cjs --sync-schedules-full
           fi
