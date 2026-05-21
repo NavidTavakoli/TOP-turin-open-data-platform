@@ -5,6 +5,9 @@ on:
     - cron: "7 * * * *"   # Every 1 hour (UTC) - minute 07 to avoid traffic
   workflow_dispatch: {}    # Manual execution
 
+permissions:
+  contents: read
+  
 jobs:
   etl_now:
     runs-on: ubuntu-latest
