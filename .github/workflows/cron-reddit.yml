@@ -7,6 +7,9 @@ on:
 
 permissions:
   contents: read
+
+env:
+  FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: true
   
 jobs:
   reddit:
@@ -17,12 +20,12 @@ jobs:
       cancel-in-progress: true
 
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v5
 
       - name: Use Node.js 20
-        uses: actions/setup-node@v4
+        uses: actions/setup-node@v5
         with:
-          node-version: "20"
+          node-version: "24"
 
       - name: Log schedule timing
         run: |
@@ -98,6 +101,7 @@ jobs:
               apikey: env.SERVICE_KEY,
               Authorization: `Bearer ${env.SERVICE_KEY}`,
               "Content-Type": "application/json",
+              "Accept-Profile": "api",
               "Content-Profile": "api"
             };
 
@@ -108,9 +112,9 @@ jobs:
             }
 
             // 3) Batch upsert (avoids duplicate inserts)
-            const ins = await fetch(`${base}/reddit_torino_posts`, {
+            const ins = await fetch(`${base}/reddit_torino_posts?on_conflict=post_id`, {
               method: "POST",
-              headers: { ...headers, Prefer: "resolution=ignore-duplicates" },
+              headers: { ...headers, Prefer: "resolution=merge-duplicates" },
               body: JSON.stringify(rows)
             });
             const insBody = await ins.text();
