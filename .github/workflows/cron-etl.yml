@@ -7,6 +7,9 @@ on:
 
 permissions:
   contents: read
+
+env:
+  FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: true
   
 jobs:
   etl_now:
@@ -17,12 +20,12 @@ jobs:
       cancel-in-progress: true
 
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v5
 
       - name: Use Node.js 20
-        uses: actions/setup-node@v4
+        uses: actions/setup-node@v5
         with:
-          node-version: "20"
+          node-version: "24"
 
       - name: Log schedule timing
         run: |
@@ -219,7 +222,7 @@ jobs:
 
 
 
-      - name: Fetch Torino traffic (5T XML) → upsert api.traffic_flow_current
+      - name: Fetch Torino traffic (5T XML) → replace api.traffic_flow_current snapshot
         env:
           POSTGREST_URL: ${{ secrets.POSTGREST_URL }}
           SERVICE_KEY:   ${{ secrets.SERVICE_KEY }}
@@ -243,7 +246,8 @@ jobs:
             'apikey': SERVICE_KEY,
             'Authorization': `Bearer ${SERVICE_KEY}`,
             'Content-Type': 'application/json',
-            'Prefer': 'resolution=merge-duplicates',
+            'Prefer': 'return=representation',
+            'Accept-Profile': 'api',
             'Content-Profile': 'api'
           };
 
@@ -325,11 +329,13 @@ jobs:
               return;
             }
 
-            const resp = await fetch(`${POSTGREST_URL}/traffic_flow_current`, {
-              method: 'POST', headers, body: JSON.stringify(rows)
+            const resp = await fetch(`${POSTGREST_URL}/rpc/replace_traffic_flow_current`, {
+              method: 'POST',
+              headers,
+              body: JSON.stringify({ p_rows: rows })
             });
             const body = await resp.text();
-            console.log('traffic_flow_current:', resp.status, 'rows:', rows.length, body || '<no-body>');
+            console.log('replace_traffic_flow_current:', resp.status, 'rows:', rows.length, 'resp:', body || '<no-body>');
             if (!resp.ok) process.exit(1);
           })().catch(e => { console.error(e); process.exit(1); });
           NODE
