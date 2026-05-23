@@ -17,14 +17,16 @@
 
 ---
 
-![Demo 001](https://github.com/NavidTavakoli/TOP-turin-open-data-platform/blob/main/Demo%20001.png)
+## **System Architecture**
+
+![Architecture](https://github.com/NavidTavakoli/TOP-turin-open-data-platform/blob/main/Architecture.png)
 
 ---
 
 ## **Overview**
 
 **TOP – Turin Open Data Platform** is a real-world prototype of a **smart city KPI and mobility data platform** for Turin, Italy. The project demonstrates how open urban data can be collected, cleaned, stored, served through APIs, and transformed into an interactive public dashboard.
-
+![Demo 001](https://github.com/NavidTavakoli/TOP-turin-open-data-platform/blob/main/Demo%20001.png)
 The platform integrates multiple urban data streams — including **public transport**, **traffic**, **weather**, **air quality**, and **local community signals** — into a single near real-time interface. Its goal is to show how modern data engineering can turn fragmented city data into actionable KPIs for citizens, researchers, city planners, transport authorities, and sustainability teams.
 
 The project runs as a lightweight serverless architecture:
@@ -61,7 +63,7 @@ The project is designed as a portfolio-grade example of how data engineering, cl
 ### **GTT Public Transit Planner**
 
 A custom public transport route planner for Turin's GTT network. Since GTT does not provide a public routing API, the planner is built directly on top of GTFS static schedule data and GTFS-RT live updates.
-
+![Demo 003](https://github.com/NavidTavakoli/TOP-turin-open-data-platform/blob/main/Demo%20003.png)
 It supports:
 
 - direct routes
@@ -195,9 +197,7 @@ The Reddit feed is cached server-side to avoid unnecessary repeated API requests
 
 ---
 
-## **System Architecture**
 
-![Architecture](https://github.com/NavidTavakoli/TOP-turin-open-data-platform/blob/main/Architecture.png)
 
 ---
 
