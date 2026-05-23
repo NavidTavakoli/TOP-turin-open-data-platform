@@ -62,11 +62,7 @@ The architecture separates the platform into five main layers:
 
 ![Data Pipeline](images/data-pipeline.png)
 
-The simplified pipeline is:
 
-```text
-External APIs → GitHub Actions → Cleaning and Normalization → Supabase PostgreSQL → Cloudflare Pages Functions → React Dashboard
-```
 
 This flow represents the core KPI pipeline. Transit routing adds an additional GTFS sync path where static GTFS files are parsed and stored in PostgreSQL, while GTFS-RT is consumed at request time by the serverless API layer.
 
