@@ -138,7 +138,7 @@ The UI presents the data using gauge-style visualizations and status categories 
 ### **Weather KPIs**
 
 Weather data is collected and displayed as live environmental indicators.
-
+![Demo 004](https://github.com/NavidTavakoli/TOP-turin-open-data-platform/blob/main/Demo%20004.png)
 Included metrics:
 
 - temperature
