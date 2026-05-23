@@ -70,10 +70,6 @@ This flow represents the core KPI pipeline. Transit routing adds an additional G
 
 ## **Demo Screenshots**
 
-### **Dashboard Overview**
-
-![Dashboard Overview](images/dashboard-overview.png)
-
 ### **Transit Planner and Route Map**
 
 ![Transit Planner Map](images/transit-planner-map.png)
