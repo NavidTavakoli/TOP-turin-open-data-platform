@@ -17,15 +17,13 @@
 
 ---
 
-## **Preview**
-
-![Dashboard Overview](images/dashboard-overview.png)
-
 ---
 
 ## **Overview**
 
 **TOP – Turin Open Data Platform** is an end-to-end **smart city data engineering and dashboard project** focused on Turin, Italy.
+
+![Dashboard Overview](images/dashboard-overview.png)
 
 The platform collects urban data from multiple public sources, normalizes it, stores it in **Supabase PostgreSQL**, serves it through **Cloudflare Pages Functions**, and visualizes the results in a **React dashboard**.
 
