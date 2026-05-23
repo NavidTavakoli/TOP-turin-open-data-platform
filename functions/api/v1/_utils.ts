@@ -1,0 +1,49 @@
+// THIS IS A DEMO VERSION - Public-safe portfolio build. Do not commit secrets or private production data.
+export function corsHeaders() {
+  return {
+    "Access-Control-Allow-Origin": "*",
+    "Access-Control-Allow-Methods": "GET, OPTIONS",
+    "Access-Control-Allow-Headers": "Content-Type",
+  };
+}
+
+export function okJSON(data: unknown, extra: HeadersInit = {}) {
+  return new Response(JSON.stringify(data), {
+    headers: { "content-type": "application/json", ...corsHeaders(), ...extra },
+  });
+}
+
+export function errJSON(status = 500, message = "Internal Server Error") {
+  return new Response(JSON.stringify({ error: message }), {
+    status,
+    headers: { "content-type": "application/json", ...corsHeaders() },
+  });
+}
+
+export function handlePreflight(request: Request) {
+  if (request.method === "OPTIONS") return new Response(null, { headers: corsHeaders() });
+  return null;
+}
+
+export type Env = {
+  SUPABASE_URL: string;
+  SUPABASE_SERVICE_ROLE_KEY: string;
+  /** Public demo safeguard: enables verbose route debug output only when explicitly set to "true". */
+  ALLOW_ROUTE_DEBUG?: string;
+};
+
+// Accept-Profile = 'api' so PostgREST can read views and tables from the api schema.
+export async function sbFetch(env: Env, path: string) {
+  const url = `${env.SUPABASE_URL}/rest/v1/${path}`;
+  const key = env.SUPABASE_SERVICE_ROLE_KEY;
+  const r = await fetch(url, {
+    headers: {
+      apikey: key,
+      Authorization: `Bearer ${key}`,
+      "Accept-Profile": "api",
+      Prefer: "count=none",
+    },
+  });
+  if (!r.ok) throw new Error(`Supabase request failed with HTTP ${r.status}`);
+  return r.json();
+}

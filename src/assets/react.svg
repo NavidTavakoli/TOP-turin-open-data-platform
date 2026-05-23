@@ -1,0 +1,6 @@
+<!-- THIS IS A DEMO VERSION - Public-safe portfolio build. Do not commit secrets or private production data. -->
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64" role="img" aria-label="TOP demo icon">
+  <rect width="64" height="64" rx="14" fill="#0f172a"/>
+  <path d="M14 43h36M18 43V25l14-8 14 8v18M24 43V29h16v14" fill="none" stroke="#38bdf8" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"/>
+  <circle cx="32" cy="24" r="3" fill="#f8fafc"/>
+</svg>

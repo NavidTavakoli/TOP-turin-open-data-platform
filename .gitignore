@@ -1,9 +1,57 @@
-# General
-.DS_Store
+# THIS IS A DEMO VERSION - Public-safe portfolio build. Do not commit secrets or private production data.
+
+# Dependencies
+node_modules/
+.pnpm-store/
+
+# Build outputs
+/dist
+/.vite
+/.wrangler
+/.cloudflare
+
+# Local environment and secrets
+.env
+.env.*
+!.env.example
+.dev.vars
+*.pem
+*.key
+*.crt
+*.p12
+*.pfx
+*.kdbx
+*service-role*
+*service_role*
+*secret*
+*token*
+*credential*
+
+# Local datasets, generated GTFS data, and cache files
+/data/
+/cache/
+/tmp/
+/temp/
+/gtfs/
+/GTFS/
+*.sqlite
+*.db
+*.dump
+*.bak
+*.zip
+*.csv
+*.tsv
+*.parquet
+*.geojson
+
+# Logs
+npm-debug.log*
+yarn-debug.log*
+pnpm-debug.log*
 *.log
 
-# Node / Pages
-node_modules/
-
-dist/
-.cache/
+# OS / editor
+.DS_Store
+Thumbs.db
+.vscode/
+.idea/
