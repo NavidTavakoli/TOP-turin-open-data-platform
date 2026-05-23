@@ -1,212 +1,510 @@
-
 # **TOP – Turin Open Data Platform**
 
-*A Demo of near real-time urban data platform highlighting the importance of KPIs in smart cities.*
-## 🚦 ETL Status <img src="https://github.com/NavidTavakoli/TOP-turin-open-data-platform/blob/main/green-dot.gif" alt="blinker" width="20"/>
-![ETL](https://github.com/NavidTavakoli/TOP-turin-open-data-platform/actions/workflows/cron-etl.yml/badge.svg)
-![Reddit](https://github.com/NavidTavakoli/TOP-turin-open-data-platform/actions/workflows/cron-reddit.yml/badge.svg)
-![Traffic Purge](https://github.com/NavidTavakoli/TOP-turin-open-data-platform/actions/workflows/cron-purge-traffic.yml/badge.svg)
-![Purge Env](https://github.com/NavidTavakoli/TOP-turin-open-data-platform/actions/workflows/cron-purge-env.yml/badge.svg)
+> **A near real-time smart city data platform for Turin, Italy — turning open urban data into live KPIs, public transport intelligence, and interactive city dashboards.**
+
+[![ETL](https://github.com/NavidTavakoli/TOP-turin-open-data-platform/actions/workflows/cron-etl.yml/badge.svg)](https://github.com/NavidTavakoli/TOP-turin-open-data-platform/actions/workflows/cron-etl.yml)
+[![Reddit](https://github.com/NavidTavakoli/TOP-turin-open-data-platform/actions/workflows/cron-reddit.yml/badge.svg)](https://github.com/NavidTavakoli/TOP-turin-open-data-platform/actions/workflows/cron-reddit.yml)
+[![Traffic Purge](https://github.com/NavidTavakoli/TOP-turin-open-data-platform/actions/workflows/cron-purge-traffic.yml/badge.svg)](https://github.com/NavidTavakoli/TOP-turin-open-data-platform/actions/workflows/cron-purge-traffic.yml)
+[![Purge Env](https://github.com/NavidTavakoli/TOP-turin-open-data-platform/actions/workflows/cron-purge-env.yml/badge.svg)](https://github.com/NavidTavakoli/TOP-turin-open-data-platform/actions/workflows/cron-purge-env.yml)
 
 ![License: MIT](https://img.shields.io/badge/License-MIT-green.svg)
-![Language: JavaScript](https://img.shields.io/badge/Language-JavaScript-yellow.svg)
-![Runtime: Node.js](https://img.shields.io/badge/Runtime-Node.js%2020-brightgreen.svg)
-
-
-![Demo 001](https://github.com/NavidTavakoli/TOP-turin-open-data-platform/blob/main/Demo%20001.png)
-
-
-
-## About the Project
-
-**Turin Open Data Platform (TOP)** is a real-world prototype of a **smart city KPI dashboard**. It is a project designed to demonstrate how **Key Performance Indicators (KPIs)** can empower smart cities. By collecting, cleaning, and visualizing near real-time data from multiple sources, this platform provides valuable insights into the urban environment of **Turin, Italy**.
-
-The platform integrates diverse datasets—including **weather**, **air quality**, **traffic conditions**, and even **citizen opinions from Reddit**—to build a unified city dashboard. The goal is to highlight how open data and automation can support decision-making, sustainability, and better quality of life in modern urban ecosystems and smart cities.
-
-![Demo 002](https://github.com/NavidTavakoli/TOP-turin-open-data-platform/blob/main/Demo%20002.png)
-
-
-
-## 🌍 Data Sources
-
-The platform integrates multiple APIs into a single PostgreSQL database hosted on **Supabase**:
-
-- **🌦️ Weather (Open-Meteo API)**
-   Current meteorological conditions for Turin (temperature, humidity, wind, precipitation, etc.).
-- **🏭 Air Quality (WAQI API – Lingotto station)**
-   Near air quality index (AQI) and pollutants such as PM2.5, PM10, O₃, NO₂, SO₂.
-- **🚦 Traffic Flow (5T Piemonte API)**
-   Road speed and flow indicators across the Piemonte region, categorized into congestion levels (free, moderate, busy, heavy, jam).
-- **💬 Reddit /r/Torino**
-   The last 50 posts from the local Reddit community.
-
-
-
-## ✨ Features
-
-- 🌦 **Weather Data** – Fetches real-time weather information for Turin.
-- 🌫 **Air Quality Monitoring** – Tracks pollution and atmospheric conditions across the city.
-- 🚦 **Traffic Data** – Collects mobility and congestion information from the Piedmont region.
-- 💬 **Citizen Voices** – Gathers the latest Reddit posts about Turin to reflect community sentiment.
-- ⚡ **Automated Data Pipeline** – Uses **GitHub Actions** to fetch, clean, and load data into a cloud-hosted PostgreSQL database (**Supabase**).
-- 📊 **Real-Time Dashboard** – Interactive city dashboard that visualizes KPIs for Turin in near real-time.
-
-
-
-## ⚙️ ETL & Workflows
-
-All pipelines are automated using **GitHub Actions**, located in `.github/workflows`.
-
-| Workflow file                | Purpose                                                      |
-| ---------------------------- | ------------------------------------------------------------ |
-| **`cron-etl.yml`**           | Fetches and ingests fresh datasets (weather, air quality, traffic, Reddit). Runs on a schedule to ensure near real-time updates. |
-| **`cron-purge-env.yml`**     | Cleans redundant or outdated **environmental data** from the database, keeping storage optimized. |
-| **`cron-purge-traffic.yml`** | Purges stale **traffic data** to maintain only relevant and recent mobility information. |
-| **`cron-reddit.yml`**        | Collects and processes the **latest Reddit posts** about Turin, reflecting real-time citizen sentiment. |
-
-**Pipeline flow:**
-
-1. Workflows fetch raw data from external APIs.
-2. ETL jobs clean and preprocess the data.
-3. Data is inserted into **Supabase (PostgreSQL)** for structured storage.
-4. The City Dashboard queries Supabase to visualize KPIs in real-time.
-
-
-
-## 🗄️ Database Design
-
-- **Supabase (PostgreSQL)** hosts the structured tables (`weather_current`, `air_quality_current`, `traffic_flow_current`, `reddit_torino_posts`).
-
-- **Views** provide higher-level KPIs (e.g., city-wide traffic congestion summary).
-
-- **Row Level Security (RLS)** + policies ensure that external clients can only **read** public-facing data.
-
-  
-
-## 🖥 City Dashboard
-
-The [City Dashboard](https://navidtavakolishalmani.com/city-dashboard )  presents all integrated datasets in a user-friendly, graphical format.
-
-- Weather and air quality indexes update in real-time.
-- Traffic congestion is tracked continuously.
-- Reddit feeds showcase live community perspectives.
-
-This dashboard illustrates how **data-driven insights** can help policymakers, researchers, and citizens better understand urban dynamics.
-
-
-
-## 🛠 Tech Stack
-
-- **Backend / Data Pipeline**: [GitHub Actions](https://github.com/features/actions), APIs, [Node.js ](https://nodejs.org/en)
-- **Database**:  [Supabase | The Postgres Development Platform.](https://supabase.com/) (PostgreSQL)
-- **Frontend**: Web-based City Dashboard ( [JavaScript](https://www.w3schools.com/js/), [HTML ](https://www.w3schools.com/Html/), [CSS ](https://www.w3schools.com/css/))
-- **Visualization**: Graphs & real-time charts for KPIs ([Apache ECharts](https://echarts.apache.org/))
-
-```mermaid
-flowchart TD
-    subgraph DataSources[🌍 Data Sources]
-        A1["🌦️ Weather"]
-        A2["🏭 Air Quality"]
-        A3["🚦 Traffic Flow"]
-        A4["💬Society"]
-    end
-
-    subgraph ETL[⚙️ ETL & Automation]
-        B1["⏱️ GitHub Actions"]
-    end
-
-    subgraph Database[🗄️ Supabase]
-        C1[(PostgreSQL DB)]
-        C2["PostgREST REST API"]
-    end
-
-    subgraph Dashboard[📊 City Dashboard]
-        D1["Dashboard"]
-        D2["Visualizations"]
-    end
-
-    A1 --> B1
-    A2 --> B1
-    A3 --> B1
-    A4 --> B1
-
-    B1 --> C1
-    C1 --> C2
-    C2 --> D1
-    D1 --> D2
-
-    %% ---------- Styles ----------
-    classDef rounded fill:#f9f9f9,stroke:#333,stroke-width:1px,rx:20,ry:20
-    class A1,A2,A3,A4,B1,C2,D1,D2 rounded
-
-    %% ---------- subgraph --------
-    style DataSources fill:#FFFFFF,stroke:#00BF63,stroke-width:2px,rx:25,ry:25
-    style ETL fill:#FFBD59,stroke:#FF914D,rx:25,ry:25
-    style Database fill:#0097B2,rx:25,ry:25
-    style Dashboard fill:#00BF63,rx:25,ry:25
-
-```
-
-
-
-## 🌍 Why This Project Matters
-
-Smart cities need more than just open data — they need **actionable insights**.  
-By automating ETL pipelines and centralizing diverse datasets (weather, air quality, traffic, and citizen sentiment), **TOP – Turin Open Data Platform** transforms raw information into **Key Performance Indicators (KPIs)** that decision-makers can trust.
-
-### 📌 Why KPIs?
-KPIs are not just numbers; they are the **pulse of the city**:
-- **Municipalities & City Planners** → Monitor mobility, congestion, and pollution in real time to support evidence-based policies.  
-- **Environmental Agencies** → Track emissions and weather patterns for sustainability and climate action.  
-- **Transport Authorities** → Optimize public transport and traffic flows with near real-time mobility data.  
-- **Healthcare & Public Safety** → Use AQI trends and extreme weather alerts for risk prevention and community health.  
-- **Research & Academia** → Access clean, integrated datasets to build models for smarter, greener urban futures.  
-
-### 🚀 Impact
-With TOP, a city can go from **reactive monitoring** to **proactive management**:  
-- From **reacting** to traffic jams → to **predicting and preventing** congestion.  
-- From **periodic pollution reports** → to **continuous air quality surveillance**.  
-- From **static dashboards** → to **scalable, automated KPI pipelines** that work 24/7.  
-
-This project is a **prototype for any city worldwide**: plug in local data sources, get instant REST APIs and dashboards, and unlock the power of KPIs for smarter governance.
-
-
-## 🎯 Next Steps
-
-- Add KPIs for **energy consumption and renewables** (Terna).
-- Integrate **public transport real-time** (GTT GTFS-RT).
-- Explore **social sentiment analysis** from Reddit posts.
-- Expand dashboard visualizations (pie charts, heatmaps, congestion maps).
-
-
-
-## 🤝 Contributing
-
-Contributions are welcome! Please fork the repository and submit a pull request.
-
-## 🙌 Acknowledgements
-
-- Supabase for managed PostgreSQL
-- GitHub Actions for CI/CD workflows
-- Open APIs providing weather, air quality, and traffic data
-
-## License  
-
-This project is distributed under the **MIT License** — see [LICENSE (MIT)](./LICENSE%20(MIT)) for details.  
-
-
+![Frontend: React](https://img.shields.io/badge/Frontend-React%20%2B%20Vite-61DAFB.svg)
+![Backend: Cloudflare](https://img.shields.io/badge/Backend-Cloudflare%20Pages%20Functions-F38020.svg)
+![Database: Supabase](https://img.shields.io/badge/Database-Supabase%20PostgreSQL-3ECF8E.svg)
+![Transit: GTFS](https://img.shields.io/badge/Transit-GTFS%20%2B%20GTFS--RT-blue.svg)
+
+**Live Demo:** [navidtavakolishalmani.com/city-dashboard](https://navidtavakolishalmani.com/city-dashboard)
 
 ---
 
-📝 Produced by [**Navid Tavakoli Shalmani**](https://navidtavakolishalmani.com/)
+![Demo 001](https://github.com/NavidTavakoli/TOP-turin-open-data-platform/blob/main/Demo%20001.png)
 
-🚧 This project is under active development
+---
 
+## **Overview**
 
+**TOP – Turin Open Data Platform** is a real-world prototype of a **smart city KPI and mobility data platform** for Turin, Italy. The project demonstrates how open urban data can be collected, cleaned, stored, served through APIs, and transformed into an interactive public dashboard.
 
+The platform integrates multiple urban data streams — including **public transport**, **traffic**, **weather**, **air quality**, and **local community signals** — into a single near real-time interface. Its goal is to show how modern data engineering can turn fragmented city data into actionable KPIs for citizens, researchers, city planners, transport authorities, and sustainability teams.
 
+The project runs as a lightweight serverless architecture:
 
+- **React + Vite frontend** deployed on **Cloudflare Pages**
+- **TypeScript edge APIs** using **Cloudflare Pages Functions**
+- **Supabase PostgreSQL** as the central urban data warehouse
+- **GitHub Actions** for automated ETL and GTFS data synchronization
+- **GTFS static + GTFS-RT** for public transport schedule and live updates
 
+---
 
+## **Why I Built This Project**
 
+Smart city dashboards often focus only on visualization. This project goes further: it demonstrates the complete data lifecycle behind an urban analytics platform.
 
+It covers:
+
+- automated ingestion from public APIs
+- PostgreSQL data modeling
+- edge API development
+- public transport schedule processing
+- route candidate generation
+- KPI visualization
+- deployment and production debugging
+- dashboard UX for real users
+
+The project is designed as a portfolio-grade example of how data engineering, cloud deployment, and urban analytics can work together in a practical smart city application.
+
+---
+
+## **Core Features**
+
+### **GTT Public Transit Planner**
+
+A custom public transport route planner for Turin's GTT network. Since GTT does not provide a public routing API, the planner is built directly on top of GTFS static schedule data and GTFS-RT live updates.
+
+It supports:
+
+- direct routes
+- one-transfer routes
+- bus, tram, and metro lines
+- walking transfers between nearby stops or stations
+- schedule-aware route generation
+- route ranking by duration, waiting time, walking distance, and mode
+- filtering of low-value transfer routes
+- interactive route visualization on Leaflet maps
+
+The planner can generate Google-like options such as:
+
+- direct bus routes
+- direct tram/bus routes
+- metro-to-bus transfers
+- bus-to-bus transfers
+- walking transfers between nearby stops
+
+It also removes weak candidate routes such as tiny 1–3 minute feeder rides followed by long waits when a direct line is already available.
+
+---
+
+### **Live Stop Arrivals**
+
+Users can search any GTT stop by name or code and see upcoming arrivals.
+
+The arrival module combines:
+
+- static GTFS schedules
+- GTFS-RT real-time delay data
+- fallback handling when live updates are unavailable
+- stop search and nearby stop discovery
+
+This makes the dashboard useful not only as an analytics interface, but also as a practical mobility tool.
+
+---
+
+### **Traffic Flow KPIs**
+
+Traffic data is collected from the 5T Piemonte source and transformed into city mobility indicators.
+
+The dashboard shows:
+
+- average road speed
+- number of monitored segments
+- congestion severity levels
+- top traffic jams
+- free / moderate / busy / heavy / jam categories
+- mobility trend visualizations
+
+---
+
+### **Air Quality Monitoring**
+
+The dashboard displays air quality conditions for Turin using AQI and pollutant-level KPIs.
+
+Included indicators:
+
+- AQI score
+- PM2.5
+- PM10
+- NO₂
+- O₃
+- SO₂
+- CO
+
+The UI presents the data using gauge-style visualizations and status categories to make the information easy to interpret.
+
+---
+
+### **Weather KPIs**
+
+Weather data is collected and displayed as live environmental indicators.
+
+Included metrics:
+
+- temperature
+- humidity
+- wind speed
+- precipitation
+- cloud cover
+- short-term historical trends
+
+Weather is combined with other urban KPIs to provide a broader view of the city context.
+
+---
+
+### **Reddit Torino Feed**
+
+The platform also collects recent posts from **r/Torino** to include a lightweight social signal layer.
+
+This is useful for capturing:
+
+- local discussions
+- public sentiment
+- mobility or city-related complaints
+- community events
+- emerging topics
+
+The Reddit feed is cached server-side to avoid unnecessary repeated API requests.
+
+---
+
+## **Engineering Highlights**
+
+- Built a custom GTFS-based route planner for Turin because no public GTT routing API is available.
+- Supports direct and one-transfer journeys across bus, tram, and metro lines.
+- Handles walking transfers between nearby stops and stations, not only exact same-stop transfers.
+- Combines static GTFS schedules with GTFS-RT live updates where available.
+- Uses schedule-aware candidate generation and service-day filtering.
+- Implements route scoring, deduplication, diversity selection, and quality filtering.
+- Removes low-value transfer routes such as tiny feeder rides followed by long waits.
+- Enriches transit legs with GTFS stop sequences and shape geometry for map visualization.
+- Uses a staging-to-production sync pattern for safe GTFS data updates.
+- Runs fully serverless on Cloudflare Pages Functions with Supabase/PostgreSQL as the data backend.
+- Includes automated ETL workflows and scheduled maintenance jobs through GitHub Actions.
+
+---
+
+## **Data Sources**
+
+| Domain | Source | Purpose |
+|---|---|---|
+| Public transport | GTT GTFS static feed | Stops, lines, schedules, trips, stop sequences, shapes |
+| Real-time transit | GTT GTFS-RT feed | Trip updates and live delay information |
+| Weather | Open-Meteo API | Current weather and historical weather metrics |
+| Air quality | WAQI API | AQI and pollutant indicators |
+| Traffic | 5T Piemonte API | Road speed, congestion, and traffic flow |
+| Community signals | Reddit r/Torino | Local posts and citizen discussion signals |
+
+---
+
+## **System Architecture**
+
+![Architecture](https://github.com/NavidTavakoli/TOP-turin-open-data-platform/blob/main/Architecture.png)
+
+---
+
+## **Transit Planner – How It Works**
+
+The route planner is the most complex part of the project. It is built from raw GTFS schedule data rather than a third-party routing API.
+
+Given an origin and destination coordinate pair, the planner:
+
+1. Finds nearby origin and destination stops within a configurable search radius.
+2. Identifies which GTT lines serve those stops using `gtt_stop_lines`.
+3. Expands the search to stops reachable by origin-side lines and destination-side lines.
+4. Builds transfer pairs using both:
+   - exact same-stop transfers
+   - walking transfers between nearby stops or stations
+5. Fetches schedule data from `gtt_stop_schedules`.
+6. Filters schedule entries by active service day and departure time window.
+7. Allows metro schedules through a special time-window safeguard when service IDs are not returned by the active-service RPC.
+8. Builds direct route candidates from trips that connect origin-side stops to destination-side stops.
+9. Builds one-transfer candidates by combining first-leg arrivals with second-leg departures.
+10. Rejects same-line transfers such as `42 → 42`.
+11. Scores candidates using duration, walking distance, transfer wait, departure delay, and transit mode.
+12. Deduplicates candidates by exact transit leg and departure bucket.
+13. Selects a diverse final set of line chains.
+14. Applies quality filters to remove weak routes such as tiny feeder rides followed by long waits.
+15. Enriches transit legs with stop-sequence and shape geometry for map rendering.
+
+---
+
+## **Route Quality Filtering**
+
+Raw transit routing can generate many technically valid but user-unfriendly options. The planner therefore includes final quality filters.
+
+Examples of routes that are removed:
+
+- same-line transfers such as `42 → 42`
+- transfers where the first ride is only 1–3 minutes followed by a long wait
+- routes where a direct line already exists and the transfer option is slower
+- duplicate line chains with similar departure times
+- transfer routes with excessive walking distance
+- low-value feeder transfers into a direct line
+
+This makes the final output closer to what users expect from a real transit planner.
+
+---
+
+## **GTFS Data Model**
+
+The project stores GTFS-derived data in Supabase under the `api` schema.
+
+Core tables include:
+
+| Table | Purpose |
+|---|---|
+| `gtt_stops` | Stop metadata and coordinates |
+| `gtt_stop_lines` | Mapping between stops and served lines |
+| `gtt_stop_schedules` | JSONB schedule entries per stop |
+| `gtt_trip_stop_sequences` | Ordered stop sequences per trip |
+| `gtt_shapes` | GTFS shape geometry for map rendering |
+| `gtt_calendar` | Regular service calendar |
+| `gtt_calendar_dates` | Service exceptions |
+
+The schedule table stores compact JSONB entries to reduce storage overhead while keeping route planning queries fast enough for edge functions.
+
+---
+
+## **GTFS Sync Pipeline**
+
+GTT publishes a static GTFS zip that is updated periodically. A Node.js sync script downloads, parses, and loads the data into Supabase.
+
+The sync uses a **staging → atomic swap** strategy:
+
+1. Download GTFS zip.
+2. Parse stops, routes, trips, stop times, calendars, and shapes.
+3. Load data into staging tables.
+4. Validate row counts and structure.
+5. Swap staging tables into production.
+6. Keep API reads consistent during updates.
+
+Example commands:
+
+```bash
+node scripts/sync-gtt-stops.cjs --sync-schedules-full
+node scripts/sync-gtt-stops.cjs --sync-trip-sequences
+node scripts/sync-gtt-stops.cjs --sync-schedules-full --dry-run
+```
+
+A GitHub Actions workflow runs the full sync automatically and can also be triggered manually.
+
+Approximate sync scale:
+
+- ~7,000 stops
+- ~1.28M schedule entries
+- ~43,000 trip sequences
+- GTFS shapes for route visualization
+- ~47MB stored in Supabase after compression
+
+---
+
+## **ETL and Automation Workflows**
+
+All scheduled pipelines are managed by GitHub Actions.
+
+| Workflow | Purpose |
+|---|---|
+| `cron-etl.yml` | Fetches weather, air quality, traffic, and other urban KPI data |
+| `cron-reddit.yml` | Collects recent Reddit posts from r/Torino |
+| `cron-purge-traffic.yml` | Removes stale traffic records to control storage growth |
+| `cron-purge-env.yml` | Removes outdated environmental records |
+| GTFS sync workflow | Updates GTT static transit data on a schedule or manually |
+
+Pipeline flow:
+
+![DataPlatform](https://github.com/NavidTavakoli/TOP-turin-open-data-platform/blob/main/DataPlatform.png)
+
+---
+
+## **Tech Stack**
+
+| Layer | Technology |
+|---|---|
+| Frontend | React 19, Vite 7, Tailwind CSS 4 |
+| Maps | Leaflet, react-leaflet |
+| Charts | Apache ECharts, Recharts |
+| Animation | Framer Motion |
+| Backend API | Cloudflare Pages Functions, TypeScript |
+| Database | Supabase PostgreSQL, PostgREST, `api` schema |
+| ETL / Sync | Node.js scripts, GitHub Actions |
+| Transit | GTFS static feed, GTFS-RT real-time feed |
+| Deployment | Cloudflare Pages |
+| Version control | GitHub |
+
+---
+
+## **Repository Structure**
+
+```text
+city-dashboard/
+├── functions/
+│   └── api/v1/
+│       ├── gtt/
+│       │   ├── arrivals.ts
+│       │   ├── stops.ts
+│       │   ├── trip-updates.ts
+│       │   └── routes/plan.ts
+│       ├── traffic/
+│       ├── weather/
+│       └── air-quality/
+├── scripts/
+│   └── sync-gtt-stops.cjs
+├── src/
+│   ├── components/
+│   │   ├── GttStatusCard.jsx
+│   │   ├── TrafficMixCard.jsx
+│   │   ├── AqiGaugeECharts.jsx
+│   │   └── RedditFeed.jsx
+│   └── App.jsx
+├── public/
+├── package.json
+└── vite.config.js
+```
+
+---
+
+## **Getting Started**
+
+### **Prerequisites**
+
+- Node.js 22+
+- npm
+- Supabase project
+- Cloudflare account
+- GTT GTFS data source
+
+### **Install**
+
+```bash
+git clone https://github.com/NavidTavakoli/NavidTavakoli.github.io
+cd NavidTavakoli.github.io/city-dashboard
+npm install
+```
+
+### **Environment Variables**
+
+Create `.env` inside `city-dashboard/`:
+
+```env
+SUPABASE_URL=https://your-project.supabase.co
+SUPABASE_SERVICE_ROLE_KEY=your-service-role-key
+```
+
+Set the same variables in Cloudflare Pages:
+
+```text
+Settings → Environment Variables
+```
+
+### **Run Locally**
+
+Frontend only:
+
+```bash
+npm run dev
+```
+
+Production build:
+
+```bash
+npm run build
+```
+
+Run Pages Functions locally with Wrangler:
+
+```bash
+npm run build
+npx wrangler pages dev dist
+```
+
+---
+
+## **Deployment**
+
+The project is deployed with Cloudflare Pages.
+
+Recommended Cloudflare build configuration:
+
+```text
+Root directory: city-dashboard
+Build command: npm run build
+Build output directory: dist
+Production branch: main
+```
+
+Push to `main` to trigger automatic deployment.
+
+---
+
+## **Why This Project Matters**
+
+Smart cities need more than open data. They need systems that transform raw data into reliable, understandable, and actionable indicators.
+
+This project shows how a city can move from disconnected data sources to an integrated urban intelligence layer.
+
+Potential use cases:
+
+- **City planners** can monitor mobility and congestion patterns.
+- **Transport authorities** can analyze public transport accessibility and service quality.
+- **Environmental teams** can track weather and pollution conditions.
+- **Researchers** can use integrated city datasets for modeling and analysis.
+- **Citizens** can access useful, real-time information in a single interface.
+
+TOP demonstrates how near real-time pipelines, cloud databases, edge APIs, and modern dashboards can support smarter urban decision-making.
+
+---
+
+## **Portfolio Value**
+
+This project demonstrates practical skills across the full data engineering lifecycle:
+
+- API ingestion
+- ETL automation
+- PostgreSQL modeling
+- GTFS schedule processing
+- geospatial reasoning
+- serverless API development
+- frontend data visualization
+- production deployment
+- debugging real cloud issues
+- route ranking and data-quality filtering
+
+It is not only a dashboard; it is an end-to-end urban data product.
+
+---
+
+## **Roadmap**
+
+Planned improvements:
+
+- Add more detailed historical KPI trends.
+- Add route comparison metrics for public transport options.
+- Add sentiment analysis for Reddit posts.
+- Add congestion heatmaps.
+- Improve GTFS-RT delay integration in the route planner.
+- Add more open datasets such as energy, bike sharing, and parking.
+- Add documentation for database schema setup.
+
+---
+
+## **Acknowledgements**
+
+- Supabase for PostgreSQL hosting and PostgREST APIs
+- Cloudflare Pages for edge deployment
+- GitHub Actions for automation
+- Open-Meteo for weather data
+- WAQI for air quality data
+- 5T Piemonte for traffic data
+- GTT for GTFS and GTFS-RT public transport data
+- OpenStreetMap contributors for map data
+
+---
+
+## **License**
+
+This project is distributed under the **MIT License**. See the license file for details.
+
+---
+
+Produced by **[Navid Tavakoli Shalmani](https://navidtavakolishalmani.com/)**
+
+*This project is under active development.*
